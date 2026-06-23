@@ -8,16 +8,16 @@ class AssessmentSubmitResponse(BaseModel):
     status: str = "queued"
     estimated_completion_seconds: int = 180
     poll_url: str
-    submitted_at: datetime
+    submission_timestamp: datetime
 
 class AssessmentStatusResponse(BaseModel):
     assessment_id: UUID
     status: Literal["queued", "processing", "complete", "failed"]
     dataset_id: Optional[str] = None
-    submitted_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    submission_timestamp: datetime
+    completion_timestamp: Optional[datetime] = None
     error_message: Optional[str] = None
+
 
 class DomainScoreObject(BaseModel):
     domain_number: int
@@ -78,7 +78,7 @@ class AssessmentResultResponse(BaseModel):
     dataset_id: Optional[str] = None
     dataset_name: str
     toolkit_version: str
-    assessed_at: datetime
+    computed_at: datetime
     domain_11_applicable: bool
     cqi: CQIResult
     prs: PRSResult

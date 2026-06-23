@@ -40,7 +40,7 @@ async def submit_assessment(
         status="queued",
         estimated_completion_seconds=180,
         poll_url=f"/api/v1/assess/{new_id}",
-        submitted_at=datetime.utcnow()
+        submission_timestamp=datetime.utcnow()
     )
 
 @router.get("/{assessment_id}", response_model=AssessmentStatusResponse)
@@ -54,5 +54,6 @@ async def get_assessment_status(
     return AssessmentStatusResponse(
         assessment_id=assessment_id,
         status="queued",
-        submitted_at=datetime.utcnow()
+        submission_timestamp=datetime.utcnow()
     )
+
