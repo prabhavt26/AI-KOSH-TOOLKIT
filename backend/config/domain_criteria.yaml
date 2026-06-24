@@ -1,37 +1,193 @@
-# YAML-driven rules catalog for 15 MIDAS domains
+# =============================================================================
+# MIDAS 2.0 Domain Scoring Criteria — YAML Configuration
+# =============================================================================
+# This file drives ALL scoring decisions for the 15 MIDAS domains.
+# Change thresholds here without touching any Python code.
+# =============================================================================
+
 domains:
-  1_annotation:
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 1 — Annotation / Labelling Reliability
+  # How good are the human-made labels/annotations on the dataset?
+  # ---------------------------------------------------------------------------
+  1:
     name: "Annotation / Labelling Reliability"
-    metrics:
-      irr_kappa_threshold_adequate: 0.6
-      irr_kappa_threshold_exemplary: 0.8
-  2_metadata:
+    weight: 1.0
+    thresholds:
+      irr_adequate: 0.6          # Inter-rater reliability score considered "good enough"
+      irr_exemplary: 0.8         # Inter-rater reliability score considered "excellent"
+      min_annotators: 2          # Minimum number of annotators to get top score
+    inferred: true
+    inferred_note: "Kappa thresholds from health informatics literature"
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 2 — Metadata Completeness
+  # How rich and machine-readable is the dataset's metadata?
+  # ---------------------------------------------------------------------------
+  2:
     name: "Metadata Completeness"
-  3_documentation:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 3 — Documentation & User Guidance
+  # How well is the dataset explained with documentation?
+  # ---------------------------------------------------------------------------
+  3:
     name: "Documentation & User Guidance"
-  4_representativeness:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 4 — Population Representativeness
+  # Does the data cover a wide range of people (age, sex, region, sites)?
+  # ---------------------------------------------------------------------------
+  4:
     name: "Population Representativeness"
-  5_interoperability:
+    weight: 1.0
+    thresholds:
+      multi_site_min: 2           # Minimum number of sites to be considered "multi-site"
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 5 — Data Structure & Interoperability
+  # Does the dataset use medical standards (ICD, SNOMED) and have high completeness?
+  # ---------------------------------------------------------------------------
+  5:
     name: "Data Structure & Interoperability"
-    metrics:
-      completeness_threshold_pct: 90.0
-  6_ai_readiness:
+    weight: 1.0
+    thresholds:
+      completeness_pct: 90.0      # Column completeness % required for a good score
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 6 — AI / Analytics Readiness
+  # Is the dataset packaged properly for machine learning (splits, labels, balance)?
+  # ---------------------------------------------------------------------------
+  6:
     name: "AI / Analytics Readiness"
-  7_privacy:
+    weight: 1.0
+    thresholds:
+      imbalance_ratio_ok: 3.0     # Class imbalance ratio below this is considered acceptable
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 7 — Privacy & Identifiability
+  # Could someone identify a real patient using this data?
+  # ---------------------------------------------------------------------------
+  7:
     name: "Privacy & Identifiability"
-  8_security:
+    weight: 1.0
+    thresholds:
+      k_anonymity_min: 5          # Minimum k value for k-anonymity to score 4
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 8 — Security & Access Governance
+  # Are there proper access controls protecting this dataset?
+  # ---------------------------------------------------------------------------
+  8:
     name: "Security & Access Governance"
-  9_provenance:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 9 — Provenance & Workflow Transparency
+  # Can you trace how the data was collected and processed end-to-end?
+  # ---------------------------------------------------------------------------
+  9:
     name: "Provenance & Workflow Transparency"
-  10_ethics:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 10 — Ethical & Social Accountability
+  # Was the data collected ethically with proper consent and equity analysis?
+  # ---------------------------------------------------------------------------
+  10:
     name: "Ethical & Social Accountability"
-  11_synthetic:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 11 — Synthetic / Simulated Data  (N/A if no synthetic data)
+  # If synthetic data exists, is it properly evaluated for utility and privacy?
+  # ---------------------------------------------------------------------------
+  11:
     name: "Synthetic / Simulated Data"
-  12_stewardship:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 12 — Stewardship & Governance
+  # Does the organisation have a formal data stewardship policy?
+  # ---------------------------------------------------------------------------
+  12:
     name: "Stewardship & Governance"
-  13_model_linkage:
+    weight: 1.0
+    inferred: false
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 13 — Model Linkage Integrity
+  # Are any ML models using this dataset properly linked and documented?
+  # ---------------------------------------------------------------------------
+  13:
     name: "Model Linkage Integrity"
-  14_sustainability:
+    weight: 1.0
+    neutral_score_when_no_models: 3   # Score 3 if no models are linked (not penalised)
+    inferred: true
+    inferred_note: "MIDAS description implies linkage when models exist; absence is neutral"
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 14 — Environmental Sustainability
+  # Is there information about energy/carbon footprint of the dataset?
+  # ---------------------------------------------------------------------------
+  14:
     name: "Environmental Sustainability"
-  15_curation:
+    weight: 1.0
+    inferred: true
+    inferred_note: "Compression ratio used as sustainability proxy from storage efficiency literature"
+
+  # ---------------------------------------------------------------------------
+  # DOMAIN 15 — Continuous Curation & Feedback
+  # Is the dataset regularly updated based on feedback?
+  # ---------------------------------------------------------------------------
+  15:
     name: "Continuous Curation & Feedback"
+    weight: 1.0
+    inferred: false
+
+# =============================================================================
+# PRS (Privacy-Risk Score) Configuration
+# =============================================================================
+prs:
+  sensitivity_multipliers:
+    standard:    1.0    # Normal health dataset — no extra risk multiplier
+    high_stigma: 1.5    # Mental health, HIV, addiction — 1.5x risk multiplier
+    critical:    2.0    # Genomics, rare disease — 2.0x risk multiplier
+
+  # PRS bands (what range maps to which label)
+  bands:
+    low_max:      15    # PRS 0-15  → Low Risk
+    moderate_max: 40    # PRS 16-40 → Moderate Risk
+    high_max:     70    # PRS 41-70 → High Risk
+                        # PRS 71-100 → Very High Risk
+
+# =============================================================================
+# CQI (Composite Quality Index) Bands
+# =============================================================================
+cqi_bands:
+  diamond_min:  95    # CQI >= 95 → Diamond
+  platinum_min: 85    # CQI >= 85 → Platinum
+  gold_min:     70    # CQI >= 70 → Gold
+  silver_min:   50    # CQI >= 50 → Silver
+  bronze_min:   25    # CQI >= 25 → Bronze
+                      # CQI < 25  → Remediation
+
+# =============================================================================
+# Release Classification Matrix thresholds
+# =============================================================================
+release:
+  open_cqi_min: 70          # CQI must be at least this for Open classification
+  open_prs_band: "Low"      # PRS must be in this band for Open classification
