@@ -19,7 +19,13 @@ from app.schemas.assessment import (
     AssessmentResultResponse,
     UploadUrlRequest, 
     UploadUrlResponse,
-    AssessmentSubmitRequest
+    AssessmentSubmitRequest,
+    CQIResult,
+    PRSResult,
+    ReleaseClassification,
+    ProfileSummary,
+    ReportURLs,
+    DomainScoreObject
 )
 from app.storage.s3_client import s3_client
 from app.worker.tasks import run_assessment
@@ -162,9 +168,120 @@ async def list_user_assessments(
     }
 )
 async def get_assessment_status_route(
-    assessment: Assessment = Depends(get_user_assessment)
+    assessment: Assessment = Depends(get_user_assessment),
+    db: AsyncSession = Depends(get_async_db)
 ):
     """Checks the status of an active or completed assessment, verifying ownership limits."""
+    if assessment.status == "complete":
+        from sqlalchemy.orm import selectinload
+        stmt = select(Assessment).where(Assessment.assessment_id == assessment.assessment_id).options(
+            selectinload(Assessment.result),
+            selectinload(Assessment.domain_scores),
+            selectinload(Assessment.metadata_form),
+            selectinload(Assessment.profile),
+            selectinload(Assessment.audit_logs)
+        )
+        res = await db.execute(stmt)
+        assessment = res.scalars().first()
+        
+        if assessment and assessment.result:
+            # Build CQIResult
+            cqi_obj = CQIResult(
+                value=float(assessment.result.cqi),
+                band=assessment.result.cqi_band,
+                total_score=assessment.result.total_domain_score,
+                max_possible=assessment.result.max_possible_score,
+                formula_trace=assessment.result.cqi_formula_trace or ""
+            )
+            
+            # Build PRSResult
+            metadata_rec = assessment.metadata_form
+            sensitivity_class = metadata_rec.sensitivity_class if metadata_rec else "standard"
+            dp_applied = metadata_rec.differential_privacy_applied if metadata_rec else False
+            dp_epsilon = float(metadata_rec.dp_epsilon) if metadata_rec and metadata_rec.dp_epsilon is not None else None
+            
+            prs_obj = PRSResult(
+                value=int(assessment.result.prs),
+                band=assessment.result.prs_band,
+                baseline_risk=float(assessment.result.prs_baseline_risk or 0.0),
+                sensitivity_class=sensitivity_class,
+                sensitivity_multiplier=float(assessment.result.prs_sensitivity_multiplier or 1.0),
+                adjusted_risk=float(assessment.result.prs_baseline_risk or 0.0) * float(assessment.result.prs_sensitivity_multiplier or 1.0),
+                computation_trace=assessment.result.prs_computation_trace or "",
+                differential_privacy_applied=dp_applied,
+                epsilon=dp_epsilon
+            )
+            
+            # Build ReleaseClassification
+            release_obj = ReleaseClassification(
+                classification=assessment.result.release_classification,
+                justification=assessment.result.classification_justification or "",
+                policy_override_applied=assessment.result.policy_override_applied
+            )
+            
+            # Build DomainScoreObject list
+            domain_scores_objs = []
+            for ds in sorted(assessment.domain_scores, key=lambda x: x.domain_number):
+                domain_scores_objs.append(DomainScoreObject(
+                    domain_number=ds.domain_number,
+                    domain_name=ds.domain_name,
+                    score=ds.score,
+                    max_score=None if ds.not_applicable else 4,
+                    not_applicable=ds.not_applicable,
+                    confidence=ds.confidence_level,
+                    rationale=ds.rationale,
+                    evidence_items=ds.evidence_items or [],
+                    gaps=ds.gaps or []
+                ))
+                
+            # Build ProfileSummary
+            profile_json = assessment.profile.profile_json if assessment.profile else {}
+            profile_summary = ProfileSummary(
+                rows=profile_json.get("shape", {}).get("rows", 0),
+                columns=profile_json.get("shape", {}).get("columns", 0),
+                file_format=profile_json.get("file", {}).get("format", "csv"),
+                file_size_bytes=profile_json.get("file", {}).get("size_bytes", 0),
+                overall_completeness_pct=profile_json.get("completeness", {}).get("overall_pct", 100.0),
+                direct_identifiers_detected=profile_json.get("pii_scan", {}).get("direct_identifiers_detected", False),
+                icd_codes_detected=profile_json.get("standards_detected", {}).get("icd_codes_present", False),
+                sampled=profile_json.get("sampled", False),
+                sample_rows=profile_json.get("sample_rows", None)
+            )
+            
+            # Build ReportURLs
+            report_urls = ReportURLs(
+                json=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.json"),
+                html=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.html"),
+                pdf=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.pdf")
+            )
+            
+            # Find audit_log_id
+            audit_log_id = assessment.assessment_id  # default fallback
+            if assessment.audit_logs:
+                for log in assessment.audit_logs:
+                    if log.event_type == "assessment_complete":
+                        audit_log_id = log.log_id
+                        break
+                else:
+                    audit_log_id = assessment.audit_logs[0].log_id
+                    
+            return AssessmentResultResponse(
+                assessment_id=assessment.assessment_id,
+                status="complete",
+                dataset_id=assessment.dataset_id,
+                dataset_name=metadata_rec.dataset_name if metadata_rec else "Unknown",
+                toolkit_version=assessment.toolkit_version,
+                computed_at=assessment.result.computed_at or assessment.completion_timestamp or datetime.now(timezone.utc),
+                domain_11_applicable=assessment.domain_11_applicable,
+                cqi=cqi_obj,
+                prs=prs_obj,
+                release=release_obj,
+                domain_scores=domain_scores_objs,
+                profile_summary=profile_summary,
+                report_urls=report_urls,
+                audit_log_id=audit_log_id
+            )
+
     return AssessmentStatusResponse(
         assessment_id=assessment.assessment_id,
         status=assessment.status,
@@ -173,3 +290,4 @@ async def get_assessment_status_route(
         completion_timestamp=assessment.completion_timestamp,
         error_message=assessment.error_message
     )
+

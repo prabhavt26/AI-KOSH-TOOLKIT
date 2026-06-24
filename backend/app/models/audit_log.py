@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, ForeignKey, Enum, TIMESTAMP, func, Index,
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
+from datetime import datetime, timezone
 from app.database import Base
 
 class AuditLog(Base):
@@ -14,7 +15,8 @@ class AuditLog(Base):
     log_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("uuid_generate_v4()"))
     assessment_id = Column(UUID(as_uuid=True), ForeignKey("assessments.assessment_id", ondelete="CASCADE"), nullable=False, index=True)
     event_type = Column(String(100), nullable=False)
-    event_timestamp = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), index=True)
+    event_timestamp = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), server_default=func.now(), index=True)
+
     component = Column(String(100), nullable=True)
     event_detail = Column(JSONB, default=dict, nullable=False)
     severity = Column(String(20), default="INFO", server_default=text("'INFO'"), nullable=False)
