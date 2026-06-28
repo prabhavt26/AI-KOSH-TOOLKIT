@@ -18,7 +18,7 @@ class PrivacyScorer(BaseDomainScorer):
             return DomainScoreResult(
                 domain_number=self.DOMAIN_NUMBER,
                 domain_name=self.DOMAIN_NAME,
-                score=0,
+                score=1,
                 rationale="Direct PII identifiers found in dataset.",
                 evidence_items=evidence,
                 gaps=gaps,

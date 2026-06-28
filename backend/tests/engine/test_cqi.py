@@ -19,12 +19,12 @@ def test_cqi_all_max_scores_d11_not_applicable():
     assert res.cqi == 100.0
     assert res.band == "Diamond"
 
-def test_cqi_all_zeros():
-    domain_scores = {i: 0 for i in range(1, 16)}
+def test_cqi_all_ones():
+    domain_scores = {i: 1 for i in range(1, 16)}
     res = compute_cqi(domain_scores, domain_11_applicable=True)
-    assert res.total_score == 0
-    assert res.cqi == 0.0
-    assert res.band == "Remediation"
+    assert res.total_score == 15
+    assert res.cqi == 25.0
+    assert res.band == "Bronze"
 
 def test_cqi_mixed_scores():
     # E.g. 10 domains with score 2, 4 domains with score 3 (Domain 11 N/A)

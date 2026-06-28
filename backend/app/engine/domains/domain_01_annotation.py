@@ -21,7 +21,7 @@ class AnnotationReliabilityScorer(BaseDomainScorer):
             return DomainScoreResult(
                 domain_number=self.DOMAIN_NUMBER,
                 domain_name=self.DOMAIN_NAME,
-                score=0,
+                score=1,
                 rationale="Annotation methodology not documented.",
                 evidence_items=evidence,
                 gaps=gaps,

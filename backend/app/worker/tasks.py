@@ -208,9 +208,9 @@ def run_assessment(self, assessment_id: str, file_key: str, metadata: Dict[str, 
                             confidence_val = result.confidence
                     except Exception as scorer_err:
                         logger.error(f"Error executing scorer for Domain {domain_number}: {scorer_err}")
-                        score_val = 0
+                        score_val = 1
                         not_applicable = False
-                        rationale_val = f"Scoring failed due to error: {str(scorer_err)} — defaulted to 0"
+                        rationale_val = f"Scoring failed due to error: {str(scorer_err)} — defaulted to 1"
                         evidence_val = []
                         gaps_val = [f"Scoring failed: {str(scorer_err)}"]
                         confidence_val = "Low"

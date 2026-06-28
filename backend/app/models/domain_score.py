@@ -10,7 +10,7 @@ class DomainScore(Base):
     __table_args__ = (
         UniqueConstraint('assessment_id', 'domain_number', name='uq_domain_scores_assessment_domain'),
         CheckConstraint('domain_number >= 1 AND domain_number <= 15', name='chk_domain_scores_domain_number'),
-        CheckConstraint('score >= 0 AND score <= 4', name='chk_domain_scores_score'),
+        CheckConstraint('(score >= 1 AND score <= 4) OR score IS NULL', name='chk_domain_scores_score'),
         Index('idx_domain_scores_domain_number', 'domain_number'),
     )
 

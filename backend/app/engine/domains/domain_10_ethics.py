@@ -16,7 +16,7 @@ class EthicsScorer(BaseDomainScorer):
         
         if not ethics and not consent:
             gaps.append("Ethics approval reference and consent protocol missing.")
-            score = 0
+            score = 1
         elif ethics and not consent:
             evidence.append(f"Ethics approval reference: {ethics}")
             gaps.append("Consent protocol not described.")

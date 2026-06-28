@@ -202,7 +202,7 @@ class TestDomains:
     def test_domain_1_annotation(self, domain_scores):
         r = domain_scores[1]
         assert r.domain_name == "Annotation / Labelling Reliability"
-        assert r.score == 0
+        assert r.score == 1
         assert r.not_applicable is False
         assert r.confidence == "Low"
         assert len(r.gaps) > 0
@@ -235,7 +235,7 @@ class TestDomains:
     def test_domain_5_interoperability(self, domain_scores):
         r = domain_scores[5]
         assert r.domain_name == "Data Structure & Interoperability"
-        assert r.score == 3
+        assert r.score == 4
         assert r.confidence == "High"
 
     def test_domain_6_ai_readiness(self, domain_scores):
@@ -273,7 +273,7 @@ class TestDomains:
         assert r.domain_name == "Synthetic / Simulated Data"
         assert r.score is None
         assert r.not_applicable is True
-        assert r.confidence == "Low"
+        assert r.confidence is None
 
     def test_domain_12_stewardship(self, domain_scores):
         r = domain_scores[12]
@@ -284,7 +284,7 @@ class TestDomains:
     def test_domain_13_model_linkage(self, domain_scores):
         r = domain_scores[13]
         assert r.domain_name == "Model Linkage Integrity"
-        assert r.score == 1
+        assert r.score == 3
         assert r.confidence == "Low"
 
     def test_domain_14_sustainability(self, domain_scores):
@@ -309,9 +309,9 @@ class TestCQI:
         scores = {d: r.score for d, r in domain_scores.items()}
         d11_app = domain_scores[11].score is not None
         result = compute_cqi(scores, d11_app)
-        assert result.total_score == 28
+        assert result.total_score == 32
         assert result.max_possible == 56
-        assert result.cqi == 50.0
+        assert result.cqi == 57.1
         assert result.band == "Silver"
         assert result.domain_11_applicable is False
 

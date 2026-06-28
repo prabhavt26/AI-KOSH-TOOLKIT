@@ -38,7 +38,7 @@ class DocumentationScorer(BaseDomainScorer):
         else:
             gaps.append("Code repository URL missing.")
             
-        score = items
+        score = max(1, items)
         rationale = f"Score {score}: Found {items} of 4 core documentation components."
         
         return DomainScoreResult(

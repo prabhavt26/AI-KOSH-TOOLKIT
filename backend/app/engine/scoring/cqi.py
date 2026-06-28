@@ -22,8 +22,8 @@ class CQIResult:
 def compute_cqi(domain_scores: Dict[int, Optional[int]], domain_11_applicable: bool) -> CQIResult:
     scores = {k: v for k, v in domain_scores.items() if v is not None}
     total = sum(scores.values())
-    max_possible = 60 if domain_11_applicable else 56
-    cqi = round((total / max_possible) * 100, 1)
+    max_possible = len([s for s in scores.values() if s is not None]) * 4
+    cqi = round((total / max_possible) * 100, 1) if max_possible > 0 else 0.0
     band = next(label for threshold, label in CQI_BANDS if cqi >= threshold)
     trace = f"({total} / {max_possible}) × 100 = {cqi}"
     return CQIResult(

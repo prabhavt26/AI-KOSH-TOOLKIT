@@ -25,7 +25,7 @@ class InteroperabilityScorer(BaseDomainScorer):
         
         if overall_pct < 50.0:
             gaps.append("Extremely low data completeness (<50%).")
-            score = 0
+            score = 1
         elif overall_pct < (target_pct - 15.0):
             gaps.append(f"Low data completeness (<{target_pct - 15.0}%).")
             score = 1

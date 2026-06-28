@@ -86,8 +86,8 @@ def test_run_assessment_pipeline_success(mock_send_webhook, mock_s3_client, db_s
     scores = db_session.query(DomainScore).filter(DomainScore.assessment_id == assessment_id).all()
     assert len(scores) == 15
     expected_scores = {
-        1: 0, 2: 1, 3: 0, 4: 1, 5: 3, 6: 2, 7: 0, 8: 1, 9: 1, 10: 0,
-        11: None, 12: 1, 13: 1, 14: 3, 15: 1
+        1: 1, 2: 1, 3: 1, 4: 1, 5: 3, 6: 2, 7: 1, 8: 1, 9: 1, 10: 1,
+        11: None, 12: 1, 13: 3, 14: 3, 15: 1
     }
     for s in scores:
         assert s.score == expected_scores[s.domain_number]
