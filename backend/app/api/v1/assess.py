@@ -36,6 +36,8 @@ from app.audit.logger import audit_logger
 
 router = APIRouter(prefix="/assess", tags=["assessment"])
 
+ALLOWED_EXTENSIONS = {"csv", "xlsx", "parquet", "json", "tsv", "zip", "pdf", "py", "r", "ipynb"}
+
 @router.post(
     "/upload-url",
     response_model=UploadUrlResponse,
@@ -46,6 +48,13 @@ async def generate_upload_url(
     current_user: User = Depends(get_current_user)
 ):
     """Generates a pre-signed S3 upload URL for direct client-to-S3 upload."""
+    ext = req.filename.split(".")[-1].lower() if "." in req.filename else req.file_format.lower()
+    if ext not in ALLOWED_EXTENSIONS or req.file_format.lower() not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unsupported file format or extension '.{ext}'. Allowed formats: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+        )
+
     assessment_id = uuid.uuid4()
     file_key = f"uploads/{assessment_id}/{req.filename}"
     upload_url = s3_client.generate_presigned_upload_url(file_key)
@@ -231,7 +240,7 @@ async def get_assessment_status_route(
                     score=ds.score,
                     max_score=None if ds.not_applicable else 4,
                     not_applicable=ds.not_applicable,
-                    confidence=ds.confidence_level,
+                    confidence=None if ds.not_applicable else ds.confidence_level,
                     rationale=ds.rationale,
                     evidence_items=ds.evidence_items or [],
                     gaps=ds.gaps or []
@@ -251,11 +260,11 @@ async def get_assessment_status_route(
                 sample_rows=profile_json.get("sample_rows", None)
             )
             
-            # Build ReportURLs
+            # Build ReportURLs (formatted as gateway endpoint paths for client accessibility)
             report_urls = ReportURLs(
-                json=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.json"),
-                html=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.html"),
-                pdf=s3_client.generate_presigned_url(f"reports/{assessment.assessment_id}/report.pdf")
+                json=f"/api/v1/assess/{assessment.assessment_id}/report?format=json",
+                html=f"/api/v1/assess/{assessment.assessment_id}/report?format=html",
+                pdf=f"/api/v1/assess/{assessment.assessment_id}/report?format=pdf"
             )
             
             # Find audit_log_id

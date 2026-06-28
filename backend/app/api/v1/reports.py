@@ -27,6 +27,8 @@ async def download_report(
         url=presigned_url,
         status_code=status.HTTP_302_FOUND
     )
-    redirect.headers["Cache-Control"] = "no-store"
+    redirect.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    redirect.headers["Pragma"] = "no-cache"
+    redirect.headers["Expires"] = "0"
     return redirect
 

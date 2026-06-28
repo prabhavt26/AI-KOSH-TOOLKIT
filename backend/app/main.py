@@ -34,15 +34,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
             
         client_ip = request.client.host if request.client else "unknown"
-        redis_key = f"rate_limit:{client_ip}"
+        if "/auth/register" in path:
+            redis_key = f"rate_limit:register:{client_ip}"
+            limit = 10
+        elif "/auth/login" in path:
+            redis_key = f"rate_limit:auth:{client_ip}"
+            limit = 20
+        else:
+            redis_key = f"rate_limit:general:{client_ip}"
+            limit = 100
+
         try:
             current = redis_client.incr(redis_key)
             if current == 1:
                 redis_client.expire(redis_key, 60)
-            if current > 100:
+            if current > limit:
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    content={"detail": "API rate limit exceeded. Max 100 requests per minute."}
+                    content={"detail": f"API rate limit exceeded for this endpoint. Max {limit} requests per minute."}
                 )
         except redis.RedisError:
             pass
@@ -57,6 +66,12 @@ app = FastAPI(
     redoc_url="/redoc" if docs_enabled else None,
     openapi_url=f"{settings.API_V1_STR}/openapi.json" if docs_enabled else None
 )
+
+@app.get("/openapi.json", include_in_schema=False)
+async def get_openapi_json_root():
+    if not docs_enabled:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": "Not found"})
+    return JSONResponse(content=app.openapi())
 
 # Set up CORS (Enforces credential-aware origin restrictions)
 app.add_middleware(

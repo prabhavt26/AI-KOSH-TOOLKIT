@@ -1,5 +1,6 @@
 import hashlib
 import jwt
+from uuid import UUID
 from typing import Optional
 from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
@@ -145,7 +146,15 @@ async def get_user_assessment(
             detail="Access denied. System admins are strictly isolated from assessment data."
         )
 
-    stmt = select(Assessment).where(Assessment.assessment_id == assessment_id)
+    try:
+        uuid_val = UUID(assessment_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assessment record not found"
+        )
+
+    stmt = select(Assessment).where(Assessment.assessment_id == uuid_val)
     result = await db.execute(stmt)
     assessment = result.scalars().first()
     
