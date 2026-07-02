@@ -67,7 +67,7 @@ The AIKosh Dataset Quality Evaluation Toolkit exposes a REST API that enables:
 
 The API is asynchronous. Submitting a dataset returns an `assessment_id` immediately. The client either polls the status endpoint or waits for a webhook callback. Processing time is typically under 3 minutes for datasets up to 1GB.
 
-**Dataset files are uploaded directly to MinIO/S3 via temporary pre-signed URLs. All other request and response bodies are JSON.**
+**Dataset files are uploaded directly to AWS S3 via temporary pre-signed URLs. All other request and response bodies are JSON.**
 
 ---
 
@@ -780,7 +780,7 @@ All error responses use this structure.
 
 ### 7.1 POST /api/v1/assess/upload-url
 
-**Request a temporary pre-signed S3/MinIO upload URL.**
+**Request a temporary pre-signed AWS S3 upload URL.**
 - **Auth:** Required (session cookie or Bearer API key)
 - **Content-Type:** `application/json`
 - **Request Body:**
@@ -847,7 +847,7 @@ All error responses use this structure.
 |---|---|---|
 | 400 | `missing_file_key` | No `file_key` in request body |
 | 400 | `missing_metadata` | No `metadata` in request body |
-| 404 | `file_not_found_in_s3` | Key does not exist in S3/MinIO |
+| 404 | `file_not_found_in_s3` | Key does not exist in AWS S3 |
 | 422 | `unsupported_format` | File key extension/type is not accepted |
 | 422 | `validation_error` | Metadata fails schema validation |
 | 429 | `rate_limit_exceeded` | Too many requests |

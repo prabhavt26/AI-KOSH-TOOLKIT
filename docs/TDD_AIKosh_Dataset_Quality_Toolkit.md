@@ -9,7 +9,7 @@
 
 **Document Version:** 1.1  
 **Status:** Active  
-**Last Updated:** June 24, 2026  
+**Last Updated:** June 30, 2026  
 **Prepared For:** AIKosh / IndiaAI Mission  
 **References:** PRD_AIKosh_Dataset_Quality_Toolkit v1.0  
 **Classification:** Internal Working Document
@@ -88,7 +88,7 @@ AIKosh / Web UI
       │ 1. Request upload URL (POST /api/v1/assess/upload-url)
       │ ◀─ Returns pre-signed S3 upload URL and S3 key
       │
-      │ 2. Upload dataset directly to MinIO/S3 using pre-signed URL
+      │ 2. Upload dataset directly to AWS S3 using pre-signed URL
       │
       │ 3. Submit metadata & S3 key (POST /api/v1/assess)
       ▼
@@ -131,12 +131,12 @@ PostgreSQL (assessment record updated to complete)
 | Task Queue | **Celery** | 5.4.x | Parallel task execution via `group`; retry logic; priority queues; separate assessment + webhook queues |
 | Message Broker | **Redis** | 7.2.x | Celery broker + result backend + rate limiting store; in-memory speed |
 | ORM | **SQLAlchemy** | 2.0.x | Async ORM; Alembic for migrations; industry standard for Python |
-| Database | **PostgreSQL** | 16.x | JSONB for evidence/gaps; ACID for audit logs; append-only rule enforcement |
+| Database | **PostgreSQL (Supabase / Managed)** | 16.x (Prod: StatefulSet) | Managed Supabase DB for shared team development/sync via session pooler; standard Postgres 16 for production deployment |
 | Migrations | **Alembic** | 1.13.x | Version-controlled schema changes |
 | Dataset Profiling | **pandas + pyarrow** | 2.2.x / 17.x | pandas for data ops; pyarrow for Parquet; sampling for large files |
 | Report Generation (HTML) | **Jinja2** | 3.1.x | Template-based HTML report rendering |
 | Report Generation (PDF) | **WeasyPrint** | 68.x | HTML→PDF inside Docker container; no binary dependencies outside container |
-| Object Storage Client | **boto3** | 1.34.x | S3-compatible; works with MinIO (dev) and AWS S3 (prod) |
+| Object Storage Client | **boto3** | 1.34.x | AWS S3 Object Storage (both dev and prod) |
 | Auth | **pyjwt + passlib[bcrypt]** | 2.8.x / 1.7.x | JWT session cookies + bcrypt password hashing |
 | Logging | **structlog** | 24.x | Structured JSON logs; per-assessment tracing in Celery workers |
 | Config Management | **Pydantic Settings** | 2.x | Type-validated environment variables |
@@ -258,7 +258,7 @@ aikosh-quality-toolkit/
 │   │   │
 │   │   ├── storage/
 │   │   │   ├── __init__.py
-│   │   │   └── s3_client.py               # S3/MinIO client wrapper
+│   │   │   └── s3_client.py               # AWS S3 client wrapper
 │   │   │
 │   │   └── audit/
 │   │       ├── __init__.py
@@ -1177,14 +1177,15 @@ CREATE RULE no_delete_audit AS ON DELETE TO audit_logs DO INSTEAD NOTHING;
 - All schema changes go through Alembic migration scripts
 - Migration files named: `YYYYMMDD_HHMM_<description>.py`
 - Every migration is reversible (has `downgrade()` function)
-- Migrations run automatically on container startup via `alembic upgrade head`
+- Migrations are run against the Supabase Session Pooler database URL
+- **Supabase Integration Note:** Since Supabase connection strings URL-encode passwords containing special characters (e.g., `@` as `%40`), percentage symbols must be escaped as `%%` inside `backend/alembic/env.py` (via `settings.DATABASE_URL.replace("%", "%%")`) to prevent Alembic's config parser from throwing interpolation syntax errors.
 - Never apply raw DDL to production directly
 
 ---
 
 ## 7. Object Storage Design
 
-Object storage (MinIO in dev, S3-compatible in prod) holds:
+Object storage (AWS S3) holds:
 - Uploaded dataset files (retained until manually deleted by the user)
 - Generated reports (JSON, HTML, PDF — retained for 5 years)
 - Dataset profile JSONs (retained for audit purposes)
@@ -1220,7 +1221,7 @@ aikosh-toolkit-bucket/
 ```
 POST /api/v1/assess/upload-url (JSON request)
 │
-├── FastAPI generates secure, temporary S3 pre-signed upload URL for MinIO
+├── FastAPI generates secure, temporary S3 pre-signed upload URL
 └── Returns URL and S3 key to React Frontend
 
 React Frontend: Uploads file directly to S3 bucket using pre-signed URL
@@ -1411,7 +1412,7 @@ The Jinja2 template renders:
 ## 15. Async Job Pipeline — Detailed Design
 
 ```
-React Frontend: Upload dataset directly to S3/MinIO via pre-signed URL
+React Frontend: Upload dataset directly to AWS S3 via pre-signed URL
                 │
                 └── POST /api/v1/assess (registers upload details)
                     │
@@ -1461,7 +1462,7 @@ run_assessment(assessment_id)
 
 ### 15.1 Assessment Cancellation and File Deletion
 - **Cancellation:** If the user cancels an assessment via the UI, the FastAPI backend revokes/terminates the active Celery worker task using `celery.app.control.revoke(task_id, terminate=True)`, sets the DB assessment status to `failed`, logs a `cancelled` rationale, and records `audit_event("assessment_cancelled")`.
-- **Manual Deletion:** Uploaded dataset files are *not* automatically deleted after report generation (STEP 12 is removed from the worker pipeline). Instead, files are kept securely in S3/MinIO until the user manually clicks "Delete Dataset" on the UI, which triggers a `DELETE /api/v1/assess/{assessment_id}` request to purge the file from S3.
+- **Manual Deletion:** Uploaded dataset files are *not* automatically deleted after report generation (STEP 12 is removed from the worker pipeline). Instead, files are kept securely in AWS S3 until the user manually clicks "Delete Dataset" on the UI, which triggers a `DELETE /api/v1/assess/{assessment_id}` request to purge the file from S3.
 
 ───────────────────────────────────────────────────────────────────
 
@@ -1604,7 +1605,7 @@ send_webhook(assessment_id)
 
 ### POST /api/v1/assess/upload-url
 
-**Purpose:** Request a temporary pre-signed S3/MinIO upload URL for dataset file.  
+**Purpose:** Request a temporary pre-signed AWS S3 upload URL for dataset file.  
 **Auth:** Required (session cookie or Bearer API key).  
 **Content-Type:** `application/json`
 
@@ -1907,14 +1908,22 @@ All configuration via environment variables, loaded via Pydantic Settings.
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    # Database
-    DATABASE_URL: str                          # postgresql+asyncpg://user:pass@host:5432/db
+    # Postgres Database
+    POSTGRES_USER: str = Field(default="postgres")
+    POSTGRES_PASSWORD: str = Field(default="postgres")
+    POSTGRES_DB: str = Field(default="aikosh_quality")
+    POSTGRES_HOST: str = Field(default="postgres")
+    POSTGRES_PORT: str = Field(default="5432")
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # Redis
     REDIS_URL: str                             # redis://host:6379/0
 
     # S3 / Object Storage
-    S3_ENDPOINT_URL: str                       # https://s3.amazonaws.com or MinIO URL
+    S3_ENDPOINT_URL: Optional[str] = None      # Optional endpoint URL (e.g. for custom S3/R2), left blank/None for AWS S3
     S3_BUCKET_NAME: str                        # aikosh-toolkit-bucket
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
@@ -1946,12 +1955,20 @@ settings = Settings()
 
 **.env.example:**
 ```
-DATABASE_URL=postgresql+asyncpg://toolkit:password@localhost:5432/toolkit_db
+# Postgres Database Settings (Supabase Connection Pooling Example)
+# Note: For Supabase session pooler on port 5432, append project reference to username.
+# Note: Passwords containing special characters (like '@') must be URL-encoded (e.g. '@' as '%40').
+POSTGRES_USER=postgres.skincirarsrwnzpdxhlf
+POSTGRES_PASSWORD=Maddie%40aikosh
+POSTGRES_DB=postgres
+POSTGRES_HOST=aws-1-ap-south-1.pooler.supabase.com
+POSTGRES_PORT=5432
+
 REDIS_URL=redis://localhost:6379/0
-S3_ENDPOINT_URL=http://localhost:9000
-S3_BUCKET_NAME=aikosh-toolkit-dev
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
+S3_ENDPOINT_URL=
+S3_BUCKET_NAME=aikosh-datasets
+S3_ACCESS_KEY=AKIA...
+S3_SECRET_KEY=your_secret_key
 AIKOSH_WEBHOOK_URL=https://api.aikosh.gov.in/webhooks/quality
 AIKOSH_WEBHOOK_SECRET=your_secret_here
 ENVIRONMENT=development
@@ -1973,19 +1990,37 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports: ["8000:8000"]
     env_file: .env
-    depends_on: [postgres, redis, minio]
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    depends_on: [redis]
     volumes: ["./backend:/app"]
 
   worker_assessment:
     build: ./backend
     command: celery -A app.worker.celery_app worker -Q assessment -c 4 --loglevel=info
     env_file: .env
-    depends_on: [postgres, redis, minio]
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    depends_on: [redis]
 
   worker_webhook:
     build: ./backend
     command: celery -A app.worker.celery_app worker -Q webhook -c 2 --loglevel=info
     env_file: .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
     depends_on: [redis]
 
   flower:
@@ -1995,6 +2030,7 @@ services:
     depends_on: [redis]
 
   postgres:
+    # Optional local Postgres fallback (decommissioned by default in favor of Supabase)
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: toolkit_db
@@ -2009,15 +2045,6 @@ services:
     volumes: ["redis_data:/data"]
     ports: ["6379:6379"]
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports: ["9000:9000", "9001:9001"]
-    volumes: ["minio_data:/data"]
-
   frontend:
     build: ./frontend
     ports: ["3000:3000"]
@@ -2030,7 +2057,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  minio_data:
 ```
 
 ---
@@ -2187,8 +2213,8 @@ domains:
                   Celery tasks     S3 (boto3)     Webhook HTTP
                           │             │
                     ┌─────┴─────┐ ┌────┴────┐
-                    │  Redis    │ │  MinIO  │
-                    │ (broker + │ │ / S3    │
+                    │  Redis    │ │  AWS    │
+                    │ (broker + │ │  S3     │
                     │  backend) │ │         │
                     └───────────┘ └─────────┘
 ```

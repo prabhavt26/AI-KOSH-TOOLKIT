@@ -634,7 +634,7 @@ The toolkit is a **rule-based, deterministic scoring engine** — not a machine 
 **Purpose:** Accept dataset metadata submissions containing S3 storage keys, validate file details, and pass references to the profiling engine.
 
 **Inputs:**
-- Dataset file S3 key (uploaded directly by client to MinIO/S3 via secure temporary pre-signed URL)
+- Dataset file S3 key (uploaded directly by client to AWS S3 via secure temporary pre-signed URL)
 - Metadata intake form (structured JSON payload covering fields required for domains not inferable from data alone)
 - Optional: data dictionary, SOPs, consent documentation S3 keys (uploaded as attachments via pre-signed URLs)
 
@@ -1334,7 +1334,7 @@ All assumptions are clearly flagged in assessment reports.
 | Scoring Engine | Python (pure rule-based, no ML dependencies) |
 | Report Generation | Jinja2 (HTML) + WeasyPrint (PDF) |
 | Database | PostgreSQL 16 |
-| Object Storage | S3-compatible (MinIO in dev, AWS S3 in prod) |
+| Object Storage | AWS S3 Object Storage |
 | Task Queue | Celery + Redis |
 | Charts | Recharts |
 | Deployment | Docker + Kubernetes |

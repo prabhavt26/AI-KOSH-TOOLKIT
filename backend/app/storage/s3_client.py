@@ -8,17 +8,20 @@ logger = logging.getLogger(__name__)
 
 class S3ClientWrapper:
     def __init__(self):
+        endpoint_url = settings.S3_ENDPOINT_URL if settings.S3_ENDPOINT_URL and settings.S3_ENDPOINT_URL.strip() else None
         self.s3 = boto3.client(
             "s3",
-            endpoint_url=settings.S3_ENDPOINT_URL,
+            endpoint_url=endpoint_url,
             aws_access_key_id=settings.S3_ACCESS_KEY,
             aws_secret_access_key=settings.S3_SECRET_KEY,
             config=Config(signature_version="s3v4"),
             region_name=settings.S3_REGION
         )
+        public_endpoint = getattr(settings, "S3_PUBLIC_ENDPOINT_URL", settings.S3_ENDPOINT_URL)
+        public_endpoint_url = public_endpoint if public_endpoint and public_endpoint.strip() else None
         self.s3_public = boto3.client(
             "s3",
-            endpoint_url=getattr(settings, "S3_PUBLIC_ENDPOINT_URL", settings.S3_ENDPOINT_URL),
+            endpoint_url=public_endpoint_url,
             aws_access_key_id=settings.S3_ACCESS_KEY,
             aws_secret_access_key=settings.S3_SECRET_KEY,
             config=Config(signature_version="s3v4"),

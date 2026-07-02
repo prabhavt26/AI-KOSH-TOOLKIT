@@ -1,18 +1,18 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: tkt_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: aikosh_quality
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+#  postgres:
+#    image: postgres:16-alpine
+#    container_name: tkt_postgres
+#    restart: always
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#      POSTGRES_DB: aikosh_quality
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7.2-alpine
@@ -24,19 +24,19 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redispassword123}
 
-  minio:
-    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
-    container_name: tkt_minio
-    restart: always
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
+#  minio:
+#    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+#    container_name: tkt_minio
+#    restart: always
+#    ports:
+#      - "9000:9000"
+#      - "9001:9001"
+#    environment:
+#      MINIO_ROOT_USER: minioadmin
+#      MINIO_ROOT_PASSWORD: minioadmin
+#    command: server /data --console-address ":9001"
+#    volumes:
+#      - minio_data:/data
 
   backend:
     build:
@@ -53,12 +53,12 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redispassword123}@redis:6379/0
-      - S3_ENDPOINT_URL=http://minio:9000
-      - S3_PUBLIC_ENDPOINT_URL=http://localhost:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET_NAME=aikosh-datasets
-      - S3_REGION=us-east-1
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_PUBLIC_ENDPOINT_URL=${S3_PUBLIC_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_REGION=${S3_REGION}
       - API_KEY_SECRET=tkt_secret_super_secure_key_12345678
       - JWT_SECRET=supersecretjwtsessionkeychangeinproduction123456!
       - AIKOSH_WEBHOOK_URL=
@@ -68,7 +68,6 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-server-header
     depends_on:
       - redis
-      - minio
 
   worker_assessment:
     build:
@@ -83,12 +82,12 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redispassword123}@redis:6379/0
-      - S3_ENDPOINT_URL=http://minio:9000
-      - S3_PUBLIC_ENDPOINT_URL=http://localhost:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET_NAME=aikosh-datasets
-      - S3_REGION=us-east-1
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_PUBLIC_ENDPOINT_URL=${S3_PUBLIC_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_REGION=${S3_REGION}
       - API_KEY_SECRET=tkt_secret_super_secure_key_12345678
       - JWT_SECRET=supersecretjwtsessionkeychangeinproduction123456!
       - AIKOSH_WEBHOOK_URL=
@@ -98,7 +97,6 @@ services:
     command: celery -A app.worker.celery_app:celery_app worker -Q assessment -c 4 --loglevel=info
     depends_on:
       - redis
-      - minio
 
   worker_webhook:
     build:
@@ -113,12 +111,12 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redispassword123}@redis:6379/0
-      - S3_ENDPOINT_URL=http://minio:9000
-      - S3_PUBLIC_ENDPOINT_URL=http://localhost:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET_NAME=aikosh-datasets
-      - S3_REGION=us-east-1
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_PUBLIC_ENDPOINT_URL=${S3_PUBLIC_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_REGION=${S3_REGION}
       - API_KEY_SECRET=tkt_secret_super_secure_key_12345678
       - JWT_SECRET=supersecretjwtsessionkeychangeinproduction123456!
       - AIKOSH_WEBHOOK_URL=
@@ -137,11 +135,13 @@ services:
     restart: always
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redispassword123}@redis:6379/0
-      - S3_ENDPOINT_URL=http://minio:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET_NAME=aikosh-datasets
-      - S3_REGION=us-east-1
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_REGION=${S3_REGION}
+    volumes:
+      - ./backend:/app
     ports:
       - "5555:5555"
     command: celery -A app.worker.celery_app:celery_app flower --port=5555

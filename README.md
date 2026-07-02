@@ -9,7 +9,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.x-blue?style=flat-square&logo=postgresql)](#)
 [![Celery](https://img.shields.io/badge/Celery-5.4.0-green?style=flat-square&logo=celery)](#)
 [![Redis](https://img.shields.io/badge/Redis-7.2-red?style=flat-square&logo=redis)](#)
-[![MinIO](https://img.shields.io/badge/MinIO-Object%20Storage-orange?style=flat-square)](#)
+[![AWS S3](https://img.shields.io/badge/AWS%20S3-Object%20Storage-orange?style=flat-square)](#)
 
 > **A user-facing, browser-first web application for automated MIDAS-grade health dataset quality assessment — with a secure multi-tenant backend, async processing pipeline, and a REST API surface that external platforms (AIKosh) can integrate with programmatically.**
 
@@ -65,7 +65,7 @@ The AIKosh platform integrates as an external consumer — it submits datasets v
 | **Health endpoint** | ✅ Complete | `GET /api/v1/health` |
 | **Frontend** (Login + Register pages) | ✅ Complete | Next.js auth layout and views |
 | **Assessment submission** | ✅ Complete | Full schema intake and S3 key validation |
-| **Pre-signed S3 upload URL** (`POST /assess/upload-url`) | ✅ Complete | Client direct uploads to S3/MinIO bucket |
+| **Pre-signed S3 upload URL** (`POST /assess/upload-url`) | ✅ Complete | Client direct uploads to AWS S3 bucket |
 | **Celery assessment pipeline** (13 steps) | ✅ Complete | Async pipeline with state machine, audit log triggers |
 | **Dataset profiler** | ✅ Complete | Real pandas-based PII, completeness, and size scanner |
 | **15 Domain scorers** | ✅ Complete | Confirmed score criteria evaluation from YAML configuration |
@@ -99,8 +99,8 @@ AIKosh Platform ───────────→ FastAPI API (port 8000)
           SQLAlchemy       Redis           boto3 (S3)
           (async)       (Celery broker)       │
                │              │               ▼
-          PostgreSQL       Celery          MinIO / S3
-          (port 5432)      Workers        (port 9000)
+           PostgreSQL       Celery          AWS S3
+           (port 5432)      Workers
                               │
                  ┌────────────┴────────────┐
                  │     13-step pipeline     │
@@ -178,7 +178,7 @@ AIKosh Platform ───────────→ FastAPI API (port 8000)
 | Auth | **pyjwt + passlib[bcrypt]** | JWT session cookies + bcrypt password hashing |
 | Profiling | **pandas 2.2 + pyarrow** | Dataset statistical profiling |
 | Reports | **Jinja2 + WeasyPrint** | HTML→PDF report generation inside Docker |
-| S3 Client | **boto3** | MinIO (dev) / AWS S3 (prod) |
+| S3 Client | **boto3** | AWS S3 Object Storage (both dev and prod) |
 
 ### Infrastructure
 
@@ -186,7 +186,7 @@ AIKosh Platform ───────────→ FastAPI API (port 8000)
 |---|---|
 | Dev Orchestration | Docker Compose (7 services) |
 | Production | Kubernetes (`k8s/` manifests) |
-| Object Storage | MinIO (dev) / S3-compatible (prod) |
+| Object Storage | AWS S3 Object Storage |
 | Worker Monitoring | Flower (port 5555) |
 
 ---
@@ -199,7 +199,7 @@ The system uses a **Dual-Authentication Model** to support both secure human bro
 - **Developer API Key Authentication (Machine Integrations):** API keys passed as Bearer tokens in the `Authorization` header (`Authorization: Bearer tkt_live_...`), validated against SHA-256 database hashes. Keys are issued per-user and managed via the UI or API.
 - **Role-Based Access:** `user` (submitter), `reviewer` (+ audit logs), `admin` (user management only — **cannot** view datasets or reports).
 - **Tenant Data Isolation:** Users can only access their own assessments and files.
-- **Manual File Deletion:** Dataset files are retained in S3/MinIO permanently until the user explicitly deletes them via the UI or API.
+- **Manual File Deletion:** Dataset files are retained in AWS S3 permanently until the user explicitly deletes them via the UI or API.
 
 ---
 
@@ -237,7 +237,7 @@ docker compose exec backend alembic upgrade head
 Services available at:
 - **Web UI (Frontend):** http://localhost:3000
 - **FastAPI OpenAPI Docs:** http://localhost:8000/docs
-- **MinIO Console:** http://localhost:9001 (minioadmin / minioadmin)
+
 - **Flower Celery Monitoring:** http://localhost:5555
 
 ---
@@ -253,10 +253,10 @@ All configuration is loaded from the root `.env` file via Pydantic Settings.
 |---|---|---|
 | `DATABASE_URL` | `postgresql+asyncpg://toolkit:password@localhost:5432/toolkit_db` | Async PostgreSQL connection string |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis broker URL for Celery |
-| `S3_ENDPOINT_URL` | `http://localhost:9000` | MinIO or S3-compatible endpoint |
-| `S3_BUCKET_NAME` | `aikosh-toolkit-dev` | Object storage bucket name |
-| `S3_ACCESS_KEY` | `minioadmin` | S3 access key |
-| `S3_SECRET_KEY` | `minioadmin` | S3 secret key |
+| `S3_ENDPOINT_URL` | — | Endpoint URL (optional, left blank for AWS S3) |
+| `S3_BUCKET_NAME` | `aikosh-datasets` | AWS S3 bucket name |
+| `S3_ACCESS_KEY` | — | AWS access key ID |
+| `S3_SECRET_KEY` | — | AWS secret access key |
 | `S3_REGION` | `ap-south-1` | S3 region |
 | `AIKOSH_WEBHOOK_URL` | — | AIKosh webhook endpoint for quality metadata delivery |
 | `AIKOSH_WEBHOOK_SECRET` | — | Bearer token for AIKosh webhook authentication |
@@ -362,9 +362,9 @@ Test coverage targets: scoring formulas, PRS calculations, domain scorer unit te
 **Reason:** PostgreSQL container takes a few seconds to become ready.
 **Fix:** Wait 10 seconds after `docker compose up`, then re-run `alembic upgrade head`.
 
-#### Q3: S3/MinIO bucket error "does not exist"
-**Reason:** MinIO started without bucket initialization.
-**Fix:** Ensure `S3_BUCKET_NAME` in `.env` matches the bucket name. The Celery workers auto-create the bucket on first use if it's missing.
+#### Q3: S3 bucket error "does not exist"
+**Reason:** The configured bucket does not exist or credentials lack permissions to create/access it.
+**Fix:** Ensure `S3_BUCKET_NAME` in `.env` matches the actual S3 bucket name, and S3 credentials have the necessary permissions. The Celery workers attempt to auto-create the bucket on first use if it is missing.
 
 #### Q4: CORS errors on login from the frontend
 **Reason:** `allow_credentials=True` requires explicit origin in `CORS_ORIGINS` — not `"*"`.

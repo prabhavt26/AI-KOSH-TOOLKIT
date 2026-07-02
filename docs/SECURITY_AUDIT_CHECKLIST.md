@@ -91,16 +91,16 @@
 
 ---
 
-### 1.5 Object Storage (MinIO / S3 — `backend/app/storage/s3_client.py`)
+### 1.5 Object Storage (AWS S3 — `backend/app/storage/s3_client.py`)
 
 | Component | STRIDE Category | Threat | Existing Mitigation | Gap / Action Needed |
 |---|---|---|---|---|
 | `uploads/` prefix — dataset files | Information Disclosure | Attacker guesses or enumerates S3 object keys and accesses datasets directly without authentication | Pre-signed URLs only; bucket not publicly readable per TDD §7 | Verify `s3_client.py` does not use `ACL='public-read'` on any `put_object` call; add `backend/tests/test_s3_security.py` to verify expired URL returns 403 |
 | `reports/` prefix — PDF/HTML/JSON reports | Information Disclosure | 24h pre-signed report URL shared or intercepted; report accessed after intended window | 24h expiry on `generate_presigned_url()` | No mechanism to revoke a pre-signed URL before expiry; document this limitation and ensure reports contain no data beyond what the caller already saw |
-| MinIO `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | Information Disclosure | Credentials in `docker-compose.yml` (`minioadmin`/`minioadmin`) committed to git | `.env.example` shows placeholder; `docker-compose.yml` shows hardcoded dev values | Enforce that `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` come from environment (K8s Secret) in production; add TruffleHog to detect hardcoded creds in git history |
+| AWS S3 credentials | Information Disclosure | Credentials in local configurations committed to git | `.env.example` shows placeholder; `.env` is gitignored | Ensure that `S3_ACCESS_KEY` and `S3_SECRET_KEY` are not hardcoded in files committed to git; use Kubernetes Secrets in production; scan git history with TruffleHog |
 | Pre-signed upload URL (`POST /api/v1/assess/upload-url`) | Elevation of Privilege | Pre-signed upload URL allows PUT of any content type/size to the S3 path — attacker uploads malware | URL tied to specific object key; file validated by profiler after upload | Currently `POST /api/v1/assess/upload-url` generates URL without file size constraint; S3 `PutObject` pre-signed URL does not enforce size limit — add `ContentLengthRange` condition in `generate_presigned_post()` or switch to `generate_presigned_post` which supports conditions |
 | Multipart upload (current `multipart/form-data` path) | Denial of Service | Client sends 5GB file via multipart in a single request body, OOM'ing the API worker | `MAX_FILE_SIZE_BYTES=5_368_709_120` documented | Current implementation accepts `multipart/form-data` directly (OpenAPI §7.2 mismatch note) — this means the file passes through the API process memory before reaching S3; pre-signed URL migration resolves this |
-| S3 bucket versioning | Denial of Service | Attacker with storage write access overwrites report files, destroying assessment evidence | Not documented as enabled | Enable S3/MinIO bucket versioning on `reports/` prefix to prevent overwrite-based evidence destruction |
+| S3 bucket versioning | Denial of Service | Attacker with storage write access overwrites report files, destroying assessment evidence | Not documented as enabled | Enable AWS S3 bucket versioning on `reports/` prefix to prevent overwrite-based evidence destruction |
 
 ---
 
@@ -124,7 +124,7 @@
 | Writable root filesystem | Tampering | Attacker with code execution inside container can write to any path, persist malware | None documented | Add `--read-only` flag to Docker run; mount `--tmpfs /tmp` for worker that needs temp file writes |
 | Base image `python:3.11` (implied) | Information Disclosure | Unpatched OS packages in base image | `pip-audit` for Python packages only | Add Trivy container scan to CI: `trivy image toolkit-api:latest --severity HIGH,CRITICAL --exit-code 1` |
 | `.env` file in repository | Information Disclosure | `.env.example` with production-like values committed; developers create `.env` with real secrets | `.env.example` only; `.env` in `.gitignore` presumably | Add TruffleHog to CI scanning entire git history; verify `.env` is in `.gitignore` (`grep "^\.env$" .gitignore`) |
-| Docker Compose port exposure | Information Disclosure | `postgres:5432`, `redis:6379`, `minio:9000/9001` exposed to host network during development | Dev-only in `docker-compose.yml` | Document that ports must not be exposed in staging/production; use K8s Services (ClusterIP) instead |
+| Docker Compose port exposure | Information Disclosure | `postgres:5432` and `redis:6379` exposed to host network during development | Dev-only in `docker-compose.yml` | Document that ports must not be exposed in staging/production; use K8s Services (ClusterIP) instead |
 
 ---
 
@@ -133,8 +133,8 @@
 | Component | STRIDE Category | Threat | Existing Mitigation | Gap / Action Needed |
 |---|---|---|---|---|
 | Pod `securityContext` | Elevation of Privilege | Pods run as root; container escape grants root on node | Not set in any `k8s/*.yaml` manifest (TDD §22.2 gap) | Add `securityContext.runAsNonRoot: true`, `runAsUser: 1000`, `readOnlyRootFilesystem: true`, `capabilities.drop: ["ALL"]`, `allowPrivilegeEscalation: false` to all pod specs |
-| NetworkPolicy | Lateral Movement | Compromised API pod can reach Redis, Postgres, MinIO directly; worker can reach Postgres and internet without restriction | Not configured (TDD §22.2 gap) | Create `NetworkPolicy` objects: API → DB:5432, API → Redis:6379; Worker → DB:5432, Worker → S3:443; Webhook → internet:443; deny all other ingress/egress |
-| K8s Secrets | Information Disclosure | `JWT_SECRET`, `DB_PASSWORD`, `REDIS_PASSWORD`, `S3_ACCESS_KEY`, `AIKOSH_WEBHOOK_SECRET` sourced from `.env` (TDD §21) | Not mitigated — `.env.example` approach mentioned | Use `kubectl create secret generic toolkit-secrets ...` or External Secrets Operator pointing to AWS Secrets Manager / HashiCorp Vault; mount as env vars in pod spec |
+| NetworkPolicy | Lateral Movement | Compromised API pod can reach Redis and Postgres directly, and AWS S3 via HTTPS; worker can reach Postgres and AWS S3 without restriction | Not configured (TDD §22.2 gap) | Create `NetworkPolicy` objects: API → DB:5432, API → Redis:6379; Worker → DB:5432, Worker → S3:443 (egress to AWS S3); Webhook → internet:443; deny all other ingress/egress |
+| K8s Secrets | Information Disclosure | `JWT_SECRET`, `DB_PASSWORD`, `REDIS_PASSWORD`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `AIKOSH_WEBHOOK_SECRET` sourced from `.env` (TDD §21) | Not mitigated — `.env.example` approach mentioned | Use `kubectl create secret generic toolkit-secrets ...` or External Secrets Operator pointing to AWS Secrets Manager / HashiCorp Vault; mount as env vars in pod spec |
 | HPA — API pods | Denial of Service | No HPA on `api` deployment (only `worker-assessment` has HPA); API flooded with requests; 3 static replicas | `worker-assessment` HPA scales 3–20 on `celery_queue_length > 10` | Add HPA for `api` deployment on CPU utilization ≥ 70%; minReplicas: 3, maxReplicas: 10 |
 | K8s Dashboard / Flower Ingress | Information Disclosure | If Flower or K8s dashboard is exposed via Ingress, unauthenticated access reveals task internals | Flower has no auth (docker-compose shows no `--basic_auth`) | Restrict Flower Ingress to VPN/internal CIDR only; add `nginx.ingress.kubernetes.io/whitelist-source-range` annotation |
 | PodSecurityAdmission | Elevation of Privilege | Pods can run privileged containers, mount host paths | Not configured (gap) | Label namespace: `pod-security.kubernetes.io/enforce: restricted` |
@@ -179,7 +179,7 @@
 | 6 | SCA — Python dependencies | Known CVEs in `backend/requirements.txt` packages | pip-audit | Every push | `pip-audit -r backend/requirements.txt --format=json --output=reports/pip-audit.json` | Zero CRITICAL or HIGH CVEs; job fails and blocks merge if found | ✅ Documented |
 | 7 | SCA — Node.js dependencies | Known CVEs in `frontend/package.json` | npm audit | Every push | `cd frontend && npm audit --audit-level=high --json > reports/npm-audit.json` | Zero HIGH or CRITICAL advisories | ❌ Missing |
 | 8 | SCA — Container images | OS package CVEs in `toolkit-api`, `toolkit-worker`, `toolkit-frontend` images | Trivy | On every Docker build | `trivy image toolkit-api:latest --severity HIGH,CRITICAL --exit-code 1 --format json -o reports/trivy-api.json` | Zero HIGH/CRITICAL CVEs; blocks image push | ❌ Missing |
-| 9 | Secret scanning — git history | Hardcoded secrets: `JWT_SECRET`, `MINIO_ROOT_PASSWORD`, `AIKOSH_WEBHOOK_SECRET`, API keys | TruffleHog | Every push + full history scan on first run | `trufflehog filesystem . --json --fail` | Zero verified secrets detected; job fails on first discovery | ❌ Missing |
+| 9 | Secret scanning — git history | Hardcoded secrets: `JWT_SECRET`, `S3_SECRET_KEY`, `AIKOSH_WEBHOOK_SECRET`, API keys | TruffleHog | Every push + full history scan on first run | `trufflehog filesystem . --json --fail` | Zero verified secrets detected; job fails on first discovery | ❌ Missing |
 | 10 | API Fuzzing | Fuzz all OpenAPI endpoints with malformed inputs, type coercion, boundary values | Schemathesis | Every staging deploy | `schemathesis run https://staging.toolkit.aikosh.gov.in/openapi.json --checks all --auth "Bearer tkt_live_test..." --hypothesis-max-examples=200 --junit-xml=reports/schemathesis.xml` | Zero 5xx responses on any fuzzed endpoint; schema violations reported | ❌ Missing |
 | 11 | Infrastructure — K8s hardening | CIS Kubernetes benchmark: RBAC, pod security, network policies, API server flags | kube-bench | Nightly | `kube-bench run --targets master,node --json > reports/kube-bench.json` | All FAIL items in L1 benchmark remediated before launch | ❌ Missing |
 | 12 | Infrastructure — Docker hardening | CIS Docker benchmark: daemon config, image security, container runtime | docker-bench-security | Nightly | `docker run --rm --net host --pid host --userns host --cap-add audit_control -v /etc:/etc:ro -v /usr/bin/containerd:/usr/bin/containerd:ro -v /usr/bin/runc:/usr/bin/runc:ro -v /var/lib:/var/lib:ro -v /var/run/docker.sock:/var/run/docker.sock:ro docker/docker-bench-security` | Zero WARN on daemon config; non-root user findings resolved | ❌ Missing |
@@ -264,7 +264,7 @@
 | 3.4.8 | XSS — Jinja2 template escaping | `backend/app/reports/generator.py` — `Environment(autoescape=True)` or `Environment(loader=..., autoescape=select_autoescape(['html']))` | ⬜ | `grep -n "autoescape" backend/app/reports/generator.py` — must be True; `grep -n "| safe" backend/app/reports/templates/quality_report.html` — must be zero |
 | 3.4.9 | XSS — Next.js frontend | `frontend/components/domain-score-table.tsx`, `gap-panel.tsx`, `score-history.tsx` — no `dangerouslySetInnerHTML` usage | ⬜ | `grep -rn "dangerouslySetInnerHTML" frontend/` — must return zero results |
 | 3.4.10 | SSRF — webhook URL validation | `backend/app/integration/aikosh_webhook.py` — before HTTP client call, resolve `webhook_url` hostname and reject if IP is RFC-1918, loopback, or link-local | ⬜ | Not documented in TDD §14; add validation using `ipaddress.ip_address()` after DNS resolution |
-| 3.4.11 | Open redirect — report URL | `GET /api/v1/assess/{id}/report` 302 redirect — `Location` header must always point to `*.amazonaws.com` or configured MinIO domain, never to user-supplied URL | ⬜ | Pre-signed URL generated by `s3_client.py` uses `S3_ENDPOINT_URL` from `settings` — user cannot influence the domain |
+| 3.4.11 | Open redirect — report URL | `GET /api/v1/assess/{id}/report` 302 redirect — `Location` header must always point to `*.amazonaws.com` or configured AWS S3 domain, never to user-supplied URL | ⬜ | Pre-signed URL generated by `s3_client.py` resolves to standard AWS S3 domains — user cannot influence the domain |
 
 ---
 
@@ -277,7 +277,7 @@
 | 3.5.3 | API key entropy | Key generated as `tkt_live_{32 random alphanumeric}` — 32 chars from 62-character alphabet = ~190 bits entropy; sufficient | ⬜ | `grep -n "secrets\|urandom\|token_urlsafe" backend/app/api/v1/auth.py` — must use `secrets.token_urlsafe(24)` or similar |
 | 3.5.4 | TLS 1.3 at ingress | K8s Ingress annotation: `nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.3"` in `k8s/ingress.yaml` | ⬜ | Verify ingress config; also add `nginx.ingress.kubernetes.io/ssl-ciphers: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"` |
 | 3.5.5 | HSTS header not currently set | Gap — no `Strict-Transport-Security` header in any middleware or Nginx config | ❌ GAP | Add to FastAPI middleware: `response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"` (only when HTTPS) |
-| 3.5.6 | S3 server-side encryption | S3 bucket has `ServerSideEncryptionConfiguration` with `SSEAlgorithm: AES256`; MinIO bucket has `--sse-s3` enabled | ⬜ | Verify with: `aws s3api get-bucket-encryption --bucket aikosh-toolkit-bucket` |
+| 3.5.6 | S3 server-side encryption | S3 bucket has `ServerSideEncryptionConfiguration` with `SSEAlgorithm: AES256` | ⬜ | Verify with: `aws s3api get-bucket-encryption --bucket aikosh-datasets` |
 
 ---
 
@@ -290,10 +290,10 @@
 | 3.6.3 | Docker containers non-root | `backend/Dockerfile` and `frontend/Dockerfile` must include `USER 1000:1000` directive after dependencies installed | ❌ GAP | Add to both Dockerfiles: `RUN addgroup --gid 1000 appgroup && adduser --uid 1000 --gid 1000 --disabled-password appuser && chown -R appuser:appgroup /app` then `USER appuser` |
 | 3.6.4 | Read-only root filesystem | Celery worker needs writable `/tmp` for temp dataset processing; API and frontend can use `--read-only --tmpfs /tmp` | ⬜ | Add to worker K8s pod spec: `volumeMounts: [{mountPath: /tmp, name: tmp-volume}]` + `volumes: [{name: tmp-volume, emptyDir: {}}]`; set `readOnlyRootFilesystem: true` |
 | 3.6.5 | K8s Pod Security Standards enforced | Namespace label `pod-security.kubernetes.io/enforce: restricted` ensures pods cannot run privileged, host network, or as root | ❌ GAP | `kubectl label namespace toolkit-prod pod-security.kubernetes.io/enforce=restricted` |
-| 3.6.6 | K8s NetworkPolicy isolates services | Each service (api, worker, db, redis, minio) has explicit `NetworkPolicy` allowing only necessary traffic | ❌ GAP | Create `k8s/network-policies.yaml` — see Section 7 hardening guide for full spec |
+| 3.6.6 | K8s NetworkPolicy isolates services | Each service (api, worker, db, redis) has explicit `NetworkPolicy` allowing only necessary traffic | ❌ GAP | Create `k8s/network-policies.yaml` — see Section 7 hardening guide for full spec |
 | 3.6.7 | Redis requires password | `docker-compose.yml` Redis service: `command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}` — currently no password documented | ❌ GAP | Add `requirepass` and update `settings.REDIS_URL` to `redis://:${REDIS_PASSWORD}@redis:6379/0` |
 | 3.6.8 | PostgreSQL uses `scram-sha-256` auth | `pg_hba.conf` in postgres container must not have `trust` method for any host; use `scram-sha-256` | ⬜ | Docker postgres image defaults to `md5`; override with `POSTGRES_PASSWORD` env var which sets `md5`; explicitly set `POSTGRES_HOST_AUTH_METHOD=scram-sha-256` |
-| 3.6.9 | MinIO bucket not publicly accessible | MinIO bucket policy: no `s3:GetObject` for Principal `*`; all access via pre-signed URLs only | ⬜ | Verify with: `mc anonymous get minio/aikosh-toolkit-bucket` — expected: `Access permission for minio/aikosh-toolkit-bucket is none` |
+| 3.6.9 | AWS S3 bucket not publicly accessible | S3 bucket Public Access Block configured to block all public ACLs/policies; all access via pre-signed URLs only | ⬜ | Verify with: `aws s3api get-public-access-block --bucket aikosh-datasets` |
 | 3.6.10 | CORS origins no wildcard | `settings.CORS_ORIGINS` never includes `"*"` in any environment; AGENTS.md §9 "What NOT To Do" explicitly warns against this | ⬜ | `grep -rn "CORS_ORIGINS" backend/app/config.py` — must be explicit list like `["http://localhost:3000", "https://toolkit.aikosh.gov.in"]` |
 
 ---
@@ -846,7 +846,7 @@ jobs:
 | 3.6.6 — K8s NetworkPolicy isolation | L2 — V14.4.5 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ❌ GAP |
 | 3.6.7 — Redis requirepass | L2 — V14.4.2 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ❌ GAP |
 | 3.6.8 — PostgreSQL scram-sha-256 | L2 — V14.4.3 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ⬜ |
-| 3.6.9 — MinIO bucket not public | L1 — V14.4.1 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ⬜ |
+| 3.6.9 — AWS S3 bucket not public | L1 — V14.4.1 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ⬜ |
 | 3.6.10 — CORS no wildcard | L1 — V14.5.3 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ⬜ |
 | 3.7.1 — No secrets in CI logs | L2 — V14.2.1 | API8:2023 Security Misconfiguration | A05:2021 Security Misconfiguration | ⬜ |
 | 3.7.2 — npm audit in CI | L2 — V14.2.2 | API6:2023 Unrestricted Access to Sensitive Business Flows | A06:2021 Vulnerable and Outdated Components | ❌ GAP |
@@ -1034,24 +1034,32 @@ volumes:
 
 ---
 
-### 7.3 MinIO / S3 (ref TDD §7)
+### 7.3 AWS S3 Hardening (ref TDD §7)
 
 ```bash
-# ── MinIO client (mc) setup ───────────────────────────────────────────────
-mc alias set toolkit https://minio.internal ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+# ── AWS CLI configuration ─────────────────────────────────────────────────
+# Configure AWS CLI credentials with necessary IAM permissions
+aws configure
 
 # ── Block all public access ───────────────────────────────────────────────
-mc anonymous set none toolkit/aikosh-toolkit-bucket
+aws s3api put-public-access-block \
+  --bucket aikosh-datasets \
+  --public-access-block-configuration \
+  "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
 # Verify:
-mc anonymous get toolkit/aikosh-toolkit-bucket
-# Expected: Access permission for toolkit/aikosh-toolkit-bucket is none
+aws s3api get-public-access-block --bucket aikosh-datasets
 
 # ── Enable bucket versioning (accidental deletion recovery) ───────────────
-mc version enable toolkit/aikosh-toolkit-bucket
+aws s3api put-bucket-versioning \
+  --bucket aikosh-datasets \
+  --versioning-configuration Status=Enabled
 
 # ── Enable server access logging ──────────────────────────────────────────
-mc admin trace toolkit --call s3 > /var/log/minio/access.log &
+# Configure AWS S3 server access logging target bucket
+aws s3api put-bucket-logging \
+  --bucket aikosh-datasets \
+  --bucket-logging-status file:///tmp/logging.json
 
 # ── Lifecycle policy: expire incomplete multipart uploads after 7 days ────
 cat > /tmp/lifecycle.json << 'EOF'
@@ -1072,26 +1080,19 @@ cat > /tmp/lifecycle.json << 'EOF'
   ]
 }
 EOF
-mc ilm import toolkit/aikosh-toolkit-bucket < /tmp/lifecycle.json
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket aikosh-datasets \
+  --lifecycle-configuration file:///tmp/lifecycle.json
 
 # ── Bucket policy: deny dangerous content types on upload ─────────────────
-# Note: MinIO does not natively block by content-type on PUT;
-# enforce via pre-signed URL conditions (ContentType) in s3_client.py:
+# Enforce via pre-signed URL conditions (ContentType) in s3_client.py:
 # Add to generate_presigned_post(): Conditions=[['eq', '$Content-Type', 'text/csv']]
 
-# ── MinIO credentials: K8s Secret (not .env) ────────────────────────────
-kubectl create secret generic minio-credentials \
-  --from-literal=MINIO_ROOT_USER=${MINIO_ROOT_USER} \
-  --from-literal=MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} \
+# ── S3 Credentials: K8s Secret (not .env) ────────────────────────────
+kubectl create secret generic s3-credentials \
+  --from-literal=S3_ACCESS_KEY=${S3_ACCESS_KEY} \
+  --from-literal=S3_SECRET_KEY=${S3_SECRET_KEY} \
   -n toolkit-prod
-
-# Reference in K8s MinIO deployment:
-# env:
-#   - name: MINIO_ROOT_USER
-#     valueFrom:
-#       secretKeyRef:
-#         name: minio-credentials
-#         key: MINIO_ROOT_USER
 
 # ── S3 server-side encryption (production AWS S3) ─────────────────────────
 aws s3api put-bucket-encryption \
@@ -1267,12 +1268,11 @@ spec:
         - protocol: TCP
           port: 6379
     - to:
-        - podSelector:
-            matchLabels:
-              app: minio
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
-          port: 9000
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -1301,12 +1301,11 @@ spec:
         - protocol: TCP
           port: 6379
     - to:
-        - podSelector:
-            matchLabels:
-              app: minio
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
-          port: 9000
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -1357,8 +1356,7 @@ stringData:
   S3_ACCESS_KEY: "${S3_ACCESS_KEY}"
   S3_SECRET_KEY: "${S3_SECRET_KEY}"
   AIKOSH_WEBHOOK_SECRET: "${AIKOSH_WEBHOOK_SECRET}"
-  MINIO_ROOT_USER: "${MINIO_ROOT_USER}"
-  MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
+
 ```
 
 ```bash

@@ -194,21 +194,21 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
         {/* Download Buttons */}
         <div className="flex gap-2 shrink-0">
           {res.report_urls?.pdf && (
-            <a href={res.report_urls.pdf} target="_blank" rel="noopener noreferrer">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${res.report_urls.pdf}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-slate-800 hover:bg-slate-900 text-xs gap-1.5">
                 <FileText className="h-4 w-4 text-rose-450" /> PDF Report
               </Button>
             </a>
           )}
           {res.report_urls?.html && (
-            <a href={res.report_urls.html} target="_blank" rel="noopener noreferrer">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${res.report_urls.html}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-slate-800 hover:bg-slate-900 text-xs gap-1.5">
                 <Download className="h-4 w-4 text-indigo-400" /> HTML Report
               </Button>
             </a>
           )}
           {res.report_urls?.json && (
-            <a href={res.report_urls.json} target="_blank" rel="noopener noreferrer">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${res.report_urls.json}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-slate-800 hover:bg-slate-900 text-xs gap-1.5">
                 <FileJson className="h-4 w-4 text-emerald-400" /> JSON Data
               </Button>
