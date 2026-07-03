@@ -1,3 +1,24 @@
+# Front-End Implementation Checkpoints
+
+> [!IMPORTANT]
+> **MANDATORY RULES & PROTOCOLS (MUST FOLLOW ALWAYS)**
+> 
+> **1. Critical Discrepancy Protocol**
+> Whenever you encounter any discrepancy between the frontend mockups/designs and the backend schemas/APIs:
+> - **Build Static UI first**: Do not block the visual design work; implement the user interface using a static layout with appropriate mocks/placeholders.
+> - **Log it immediately**: Formally log the issue in [discrepency.md](file:///Users/prabhavtrivedi/Desktop/AI-KOSH-TOOLKIT/discrepency.md) before implementing integration logic.
+> - **Stop and report when blocked**: If a discrepancy makes it impossible to proceed with the checkpoint or compile the code, stop immediately and report the error details to the user.
+> 
+> **2. Session & Cookie Validation Protocol**
+> - **No guessing or assuming**: If the session cookie for the live MIDAS reference site (`midas.icmr.org.in`) expires or a login is required again, **PAUSE AND REPORT IT IMMEDIATELY** to get a new cookie. Do not guess, assume credentials, or attempt automated bypasses.
+> 
+> **3. Execution & Reporting Control Protocol**
+> - **Work in small chunks**: Execute the implementation strictly in small, incremental steps mapping directly to the numbered checkpoints.
+> - **Proper reporting**: Do not combine checkpoints or execute changes in one go. Explicitly report every single action, file edit, or command execution to ensure the user has complete control and visibility over what is happening at all times.
+> 
+> **4. Frontend Tech Stack Flexibility**
+> - **Stack selection**: Sticking to the template's Next.js setup is not strictly required. If you find midway that another frontend stack or library would make it easier or better to replicate the live MIDAS site exactly, first propose this stack change formally to the user, and switch to it after approval.
+
 1. **Directory Structure & Routing Skeletons**: Establish the Next.js page routing structure (`/`, `/lite-version`, `/technical-version`, `/delphi-proposal`, `/login`, `/register`, `/upload`, `/dashboard`, `/validate`, `/admin`) using empty placeholder components to register all routes.
 2. **Global Styling & Typography Foundation**: Configure CSS variables and layout components (Navbar, Footer) matching MIDAS's design system: serif headers (Georgia/Iowan Old Style), sans-serif body text (Aptos/Segoe UI), color palette (navy/blue primary, orange accent, warm white background), and custom scrollbars/borders.
 3. **Static UI: Landing & Document Pages**: Build pixel-perfect static mockups for the homepage (all sections including hero, stats, cards, CTA) and the public reference pages (Lite, Technical, and Delphi Proposal specifications).
