@@ -29,8 +29,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
           errorMessage = errorData.detail;
         } else if (Array.isArray(errorData.detail)) {
           errorMessage = errorData.detail
-            .map((err: any) => {
-              const field = Array.isArray(err.loc) ? err.loc.filter((x: any) => x !== "body" && x !== "metadata").join(" -> ") : err.loc;
+            .map((err: { loc: (string | number)[]; msg?: string }) => {
+              const field = Array.isArray(err.loc) ? err.loc.filter((x: string | number) => x !== "body" && x !== "metadata").join(" -> ") : err.loc;
               return `${field ? field + ": " : ""}${err.msg || JSON.stringify(err)}`;
             })
             .join("; ");
@@ -38,7 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
           errorMessage = JSON.stringify(errorData.detail);
         }
       }
-    } catch (_) {
+    } catch {
       // ignore
     }
     throw new Error(errorMessage);
@@ -55,7 +55,7 @@ export const api = {
   get<T>(path: string, options?: RequestInit) {
     return request<T>(path, { ...options, method: "GET" });
   },
-  post<T>(path: string, body?: any, options?: RequestInit) {
+  post<T>(path: string, body?: unknown, options?: RequestInit) {
     const isFormData = body instanceof FormData;
     return request<T>(path, {
       ...options,
@@ -63,7 +63,7 @@ export const api = {
       body: isFormData ? body : JSON.stringify(body),
     });
   },
-  put<T>(path: string, body?: any, options?: RequestInit) {
+  put<T>(path: string, body?: unknown, options?: RequestInit) {
     const isFormData = body instanceof FormData;
     return request<T>(path, {
       ...options,

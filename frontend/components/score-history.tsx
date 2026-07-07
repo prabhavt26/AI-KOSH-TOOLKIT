@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, AlertCircle } from "lucide-react";
-import Link from "next/link";
 import { Assessment } from "../lib/types";
 
 interface ScoreHistoryProps {
@@ -15,13 +14,13 @@ export default function ScoreHistory({ assessments, onSelect }: ScoreHistoryProp
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "complete":
-        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
       case "processing":
-        return "bg-sky-500/10 text-sky-400 border-sky-500/20 animate-pulse";
+        return "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 animate-pulse";
       case "queued":
-        return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+        return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
       default:
-        return "bg-rose-500/10 text-rose-400 border-rose-500/20";
+        return "bg-rose-500/10 text-rose-600 dark:text-rose-450 border-rose-500/20";
     }
   };
 
@@ -34,41 +33,41 @@ export default function ScoreHistory({ assessments, onSelect }: ScoreHistoryProp
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (_) {
+    } catch {
       return dateStr;
     }
   };
 
   if (assessments.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 rounded-xl border border-white/5 bg-slate-900/20 text-center">
-        <AlertCircle className="h-8 w-8 text-slate-500 mb-2" />
-        <p className="text-sm text-slate-400">No assessments found. Submit a dataset to start.</p>
+      <div className="flex flex-col items-center justify-center p-8 rounded-xl border border-border bg-card text-center">
+        <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground font-medium">No assessments found. Submit a dataset to start.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/60 backdrop-blur-xl overflow-hidden">
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
       <Table>
-        <TableHeader className="bg-slate-950/40 border-b border-white/10">
+        <TableHeader className="bg-muted/40 border-b border-border">
           <TableRow>
-            <TableHead className="font-bold text-slate-300">Submitted</TableHead>
-            <TableHead className="font-bold text-slate-300">Format</TableHead>
-            <TableHead className="font-bold text-slate-300">Status</TableHead>
-            <TableHead className="w-[80px]"></TableHead>
+            <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider">Submitted</TableHead>
+            <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider">Format</TableHead>
+            <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
+            <TableHead className="w-[120px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {assessments.map((a) => (
-            <TableRow key={a.assessment_id} className="border-b border-white/5 hover:bg-white/5">
-              <TableCell className="text-xs text-slate-200">
+            <TableRow key={a.assessment_id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+              <TableCell className="text-xs text-foreground">
                 <div className="flex items-center gap-1.5 font-medium">
-                  <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                   {formatDate(a.submitted_at)}
                 </div>
               </TableCell>
-              <TableCell className="font-mono text-xs uppercase text-slate-400">
+              <TableCell className="font-mono text-xs uppercase text-muted-foreground font-semibold">
                 {a.file_format}
               </TableCell>
               <TableCell>
@@ -81,21 +80,21 @@ export default function ScoreHistory({ assessments, onSelect }: ScoreHistoryProp
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 font-bold"
+                    className="text-xs text-accent hover:text-accent/90 hover:bg-accent/10 font-bold"
                     onClick={() => onSelect(a.assessment_id)}
                   >
                     View Result
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 ) : a.status === "failed" ? (
-                  <span className="text-xs text-rose-500 font-semibold" title={a.error_message || "Unknown error"}>
+                  <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold" title={a.error_message || "Unknown error"}>
                     Error
                   </span>
                 ) : (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 font-bold animate-pulse"
+                    className="text-xs text-primary hover:text-primary/90 hover:bg-primary/10 font-bold animate-pulse"
                     onClick={() => onSelect(a.assessment_id)}
                   >
                     Polling...

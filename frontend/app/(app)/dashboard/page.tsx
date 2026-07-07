@@ -9,8 +9,7 @@ import ScoreHistory from "@/components/score-history";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Key, Calendar, Eye, Trash2, Clipboard, Check, Database, HelpCircle, ShieldAlert } from "lucide-react";
+import { Plus, Key, Trash2, Clipboard, Check, Database, ShieldAlert } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -59,19 +58,19 @@ export default function DashboardPage() {
   const processingAssessments = assessments.filter(a => a.status === "processing" || a.status === "queued").length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Dashboard Top Row */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold tracking-tight text-primary font-serif font-black">
             Quality & Privacy Dashboard
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Submit datasets for evaluation, review historical assessment runs, and manage developer keys.
           </p>
         </div>
         <Link href="/upload" passHref>
-          <Button className="bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-xs font-semibold py-5 shadow-lg shadow-indigo-650/15">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground text-foreground text-xs font-semibold py-5 shadow-lg shadow-indigo-650/15">
             <Plus className="h-4 w-4 mr-1.5" /> New Assessment
           </Button>
         </Link>
@@ -79,43 +78,43 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/40 border-slate-850">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-slate-400">Total Runs</CardDescription>
-            <CardTitle className="text-3xl font-black text-slate-100">{totalAssessments}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Total Runs</CardDescription>
+            <CardTitle className="text-3xl font-black text-foreground">{totalAssessments}</CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-[10px] text-slate-500 font-medium">All dataset evaluations submitted</span>
+            <span className="text-[10px] text-muted-foreground/75 font-medium">All dataset evaluations submitted</span>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-850">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-slate-400">Completed</CardDescription>
-            <CardTitle className="text-3xl font-black text-emerald-400">{completedAssessments}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Completed</CardDescription>
+            <CardTitle className="text-3xl font-black text-emerald-600 dark:text-emerald-450">{completedAssessments}</CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-[10px] text-slate-500 font-medium">Reports generated successfully</span>
+            <span className="text-[10px] text-muted-foreground/75 font-medium">Reports generated successfully</span>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-850">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-slate-400">Processing</CardDescription>
-            <CardTitle className="text-3xl font-black text-sky-400">{processingAssessments}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Processing</CardDescription>
+            <CardTitle className="text-3xl font-black text-sky-600 dark:text-sky-400">{processingAssessments}</CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-[10px] text-slate-500 font-medium">Evaluating pipelines/scorers...</span>
+            <span className="text-[10px] text-muted-foreground/75 font-medium">Evaluating pipelines/scorers...</span>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-850">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-slate-400">API Keys</CardDescription>
-            <CardTitle className="text-3xl font-black text-indigo-400">{apiKeys.length}</CardTitle>
+            <CardDescription className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">API Keys</CardDescription>
+            <CardTitle className="text-3xl font-black text-accent">{apiKeys.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-[10px] text-slate-500 font-medium">Active integration endpoints</span>
+            <span className="text-[10px] text-muted-foreground/75 font-medium">Active integration endpoints</span>
           </CardContent>
         </Card>
       </div>
@@ -124,14 +123,14 @@ export default function DashboardPage() {
         {/* Assessment Runs Table */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-slate-100">Historical Assessments</h2>
+            <Database className="h-5 w-5 text-accent" />
+            <h2 className="text-lg font-bold text-foreground">Historical Assessments</h2>
           </div>
           
           {isLoadingAssessments ? (
-            <div className="h-64 rounded-xl border border-slate-800 bg-slate-900/20 flex flex-col items-center justify-center gap-2">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
-              <span className="text-xs text-slate-400 font-medium">Retrieving evaluations...</span>
+            <div className="h-64 rounded-xl border border-border bg-slate-900/20 flex flex-col items-center justify-center gap-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent"></div>
+              <span className="text-xs text-muted-foreground font-medium">Retrieving evaluations...</span>
             </div>
           ) : (
             <ScoreHistory
@@ -144,24 +143,24 @@ export default function DashboardPage() {
         {/* API Key Management */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-slate-100">API Keys</h2>
+            <Key className="h-5 w-5 text-accent" />
+            <h2 className="text-lg font-bold text-foreground">API Keys</h2>
           </div>
 
-          <Card className="bg-slate-900/60 backdrop-blur-md border-slate-800 shadow-xl">
-            <CardHeader className="pb-4 border-b border-slate-850">
-              <CardTitle className="text-sm font-bold text-slate-200">Developer Integrations</CardTitle>
-              <CardDescription className="text-xs text-slate-400">
+          <Card className="bg-card border-border shadow-md">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-sm font-bold text-foreground">Developer Integrations</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
                 Create Bearer API keys to trigger assessment evaluations programmatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               {/* Display newly created key alert */}
               {createdKeyRaw && (
-                <div className="p-3.5 rounded-lg bg-indigo-950/20 border border-indigo-500/30 text-slate-200 space-y-2.5">
+                <div className="p-3.5 rounded-lg bg-accent/5 border border-accent/25 text-foreground space-y-2.5">
                   <div className="flex items-start gap-2">
-                    <ShieldAlert className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
-                    <div className="text-[11px] font-semibold text-indigo-300">
+                    <ShieldAlert className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                    <div className="text-[11px] font-semibold text-accent">
                       Copy this key now. It will not be shown again.
                     </div>
                   </div>
@@ -170,12 +169,12 @@ export default function DashboardPage() {
                       type="text"
                       readOnly
                       value={createdKeyRaw}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 font-mono text-[10px] text-indigo-400 select-all focus:outline-none"
+                      className="w-full bg-background border border-border rounded px-2 py-1 font-mono text-[10px] text-accent select-all focus:outline-none"
                     />
                     <Button
                       size="sm"
                       onClick={handleCopyKey}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-xs px-2 h-7 rounded"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-2 h-7 rounded"
                     >
                       {copied ? <Check className="h-3 w-3" /> : <Clipboard className="h-3 w-3" />}
                     </Button>
@@ -189,12 +188,12 @@ export default function DashboardPage() {
                   placeholder="Key name (e.g. AIKosh Production)"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  className="bg-slate-950 border-slate-800 text-xs h-9"
+                  className="bg-background border-border text-xs h-9"
                 />
                 <Button
                   type="submit"
                   disabled={createApiKeyMutation.isPending || !newKeyName.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-xs h-9"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9"
                 >
                   Generate
                 </Button>
@@ -203,21 +202,21 @@ export default function DashboardPage() {
               {/* List of keys */}
               {isLoadingKeys ? (
                 <div className="flex justify-center py-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border border-indigo-500 border-t-transparent"></div>
+                  <div className="h-5 w-5 animate-spin rounded-full border border-primary border-t-transparent"></div>
                 </div>
               ) : apiKeys.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">No active API keys created.</p>
+                <p className="text-xs text-muted-foreground/75 text-center py-4">No active API keys created.</p>
               ) : (
                 <div className="space-y-2.5">
                   {apiKeys.map((key) => (
                     <div
                       key={key.key_id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-850 bg-slate-950/40 hover:bg-slate-950/70 transition-all"
+                      className="flex items-center justify-between p-3 rounded-lg border border-border bg-background/40 hover:bg-background/70 transition-all"
                     >
                       <div className="space-y-0.5 max-w-[70%]">
                         <span className="text-xs font-bold text-slate-350 block truncate">{key.owner_name}</span>
-                        <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                          <span className="font-mono bg-slate-900 border border-slate-800 px-1 rounded text-indigo-400">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/75">
+                          <span className="font-mono bg-slate-900 border border-border px-1 rounded text-accent">
                             {key.key_prefix}...
                           </span>
                           <span>•</span>

@@ -28,22 +28,7 @@ export default function CQIGauge({ value, band, totalScore, maxPossible, trace }
     }
   };
 
-  const getBandGradient = (b: string) => {
-    switch (b.toLowerCase()) {
-      case "diamond":
-        return "from-cyan-500 to-blue-600";
-      case "platinum":
-        return "from-indigo-500 to-purple-600";
-      case "gold":
-        return "from-amber-400 to-yellow-600";
-      case "silver":
-        return "from-slate-400 to-slate-500";
-      case "bronze":
-        return "from-orange-400 to-red-500";
-      default:
-        return "from-rose-500 to-red-700";
-    }
-  };
+
 
   const circumference = 2 * Math.PI * 50;
   const strokeDashoffset = circumference - (value / 100) * circumference;

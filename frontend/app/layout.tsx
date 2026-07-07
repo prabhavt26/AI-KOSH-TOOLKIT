@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Providers from "./providers";
@@ -7,6 +7,11 @@ import Providers from "./providers";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-serif",
 });
 
 export const metadata: Metadata = {
@@ -20,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("dark font-sans", inter.variable)}>
-      <body className="bg-slate-950 text-slate-100 antialiased min-h-screen">
+    <html lang="en" className={cn("font-sans scroll-smooth", inter.variable, lora.variable)}>
+      <body className="bg-background text-foreground antialiased min-h-screen">
         <Providers>
           {children}
         </Providers>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { MetadataForm } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -112,7 +112,7 @@ export default function UploadPage() {
   const [hasLinkedModels, setHasLinkedModels] = useState<boolean>(false);
   const [rawLinkedModelsText, setRawLinkedModelsText] = useState<string>("");
 
-  const updateField = (field: keyof MetadataForm, value: any) => {
+  const updateField = (field: keyof MetadataForm, value: string | number | boolean | string[] | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -259,9 +259,10 @@ export default function UploadPage() {
 
       setUploadStatus("Success! Redirecting to analysis dashboard...");
       router.push(`/dashboard/${res.assessment_id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || "An error occurred during submission.");
+      const msg = err instanceof Error ? err.message : "An error occurred during submission.";
+      setErrorMsg(msg);
       setIsSubmitting(false);
     }
   };
@@ -269,33 +270,32 @@ export default function UploadPage() {
   const progressPercentage = (currentStep / 8) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary font-serif font-black">
           New Quality Assessment
         </h1>
-        <p className="text-slate-400 text-sm">
+        <p className="text-muted-foreground text-sm">
           Ingest and evaluate your dataset against the 15-domain MIDAS 2.0 quality and privacy standards.
         </p>
       </div>
 
       {/* Steps Visual Bar */}
-      <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 backdrop-blur-sm">
+      <div className="bg-secondary/35 border border-border/60 rounded-xl p-4 backdrop-blur-sm">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Step {currentStep} of 8: {SECTIONS[currentStep - 1].name}
           </span>
-          <span className="text-xs font-bold text-indigo-400">
+          <span className="text-xs font-bold text-accent">
             {Math.round(progressPercentage)}% Complete
           </span>
         </div>
-        <Progress value={progressPercentage} className="h-1.5 bg-slate-950" />
+        <Progress value={progressPercentage} className="h-1.5 bg-background border border-border/30" />
         
         {/* Navigation Step Pills */}
         <div className="hidden md:flex justify-between mt-4">
           {SECTIONS.map((sec, idx) => {
-            const Icon = sec.icon;
             const isCompleted = idx + 1 < currentStep;
             const isActive = idx + 1 === currentStep;
             return (
@@ -303,19 +303,19 @@ export default function UploadPage() {
                 key={sec.id}
                 className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
                   isActive
-                    ? "text-indigo-400"
+                    ? "text-accent"
                     : isCompleted
                     ? "text-emerald-400"
-                    : "text-slate-500"
+                    : "text-muted-foreground/75"
                 }`}
               >
                 <div
                   className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] border ${
                     isActive
-                      ? "border-indigo-500 bg-indigo-950/50"
+                      ? "border-accent bg-accent/5"
                       : isCompleted
                       ? "border-emerald-500 bg-emerald-950/20"
-                      : "border-slate-800 bg-slate-950"
+                      : "border-border bg-background"
                   }`}
                 >
                   {isCompleted ? "✓" : sec.id}
@@ -328,7 +328,7 @@ export default function UploadPage() {
       </div>
 
       {/* Main Wizard Form Container */}
-      <Card className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 shadow-2xl">
+      <Card className="bg-card border border-border/50 shadow-lg">
         <form onSubmit={handleSubmit}>
           <CardContent className="pt-6 min-h-[400px]">
             {errorMsg && (
@@ -343,35 +343,35 @@ export default function UploadPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="dataset_name" className="text-slate-200">Dataset Name *</Label>
+                    <Label htmlFor="dataset_name" className="text-foreground">Dataset Name *</Label>
                     <Input
                       id="dataset_name"
                       placeholder="e.g. Chest X-ray Tuberculosis Cohort"
                       value={formData.dataset_name}
                       onChange={(e) => updateField("dataset_name", e.target.value)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
-                    <p className="text-[11px] text-slate-500">Min 5 characters. Must be descriptive.</p>
+                    <p className="text-[11px] text-muted-foreground/75">Min 5 characters. Must be descriptive.</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dataset_version" className="text-slate-200">Dataset Version</Label>
+                    <Label htmlFor="dataset_version" className="text-foreground">Dataset Version</Label>
                     <Input
                       id="dataset_version"
                       placeholder="e.g. 1.0.0"
                       value={formData.dataset_version}
                       onChange={(e) => updateField("dataset_version", e.target.value)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dataset_type" className="text-slate-200">Dataset Type *</Label>
+                    <Label htmlFor="dataset_type" className="text-foreground">Dataset Type *</Label>
                     <select
                       id="dataset_type"
                       value={formData.dataset_type}
                       onChange={(e) => updateField("dataset_type", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="tabular">Tabular (CSV, XLSX, Parquet)</option>
                       <option value="imaging">Imaging (DICOM, X-Ray, MRI)</option>
@@ -381,23 +381,23 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="persistent_identifier" className="text-slate-200">Persistent Identifier (DOI / Registry ID)</Label>
+                    <Label htmlFor="persistent_identifier" className="text-foreground">Persistent Identifier (DOI / Registry ID)</Label>
                     <Input
                       id="persistent_identifier"
                       placeholder="e.g. 10.5281/zenodo.12345"
                       value={formData.persistent_identifier}
                       onChange={(e) => updateField("persistent_identifier", e.target.value)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="license_type" className="text-slate-200">License Type *</Label>
+                    <Label htmlFor="license_type" className="text-foreground">License Type *</Label>
                     <select
                       id="license_type"
                       value={formData.license_type}
                       onChange={(e) => updateField("license_type", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="CC BY 4.0">CC BY 4.0 (Attribution; Commercial allowed)</option>
                       <option value="CC BY-NC 4.0">CC BY-NC 4.0 (Attribution; Non-commercial)</option>
@@ -416,12 +416,12 @@ export default function UploadPage() {
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="study_type" className="text-slate-200">Study Type *</Label>
+                  <Label htmlFor="study_type" className="text-foreground">Study Type *</Label>
                   <select
                     id="study_type"
                     value={formData.study_type}
                     onChange={(e) => updateField("study_type", e.target.value)}
-                    className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                   >
                     <option value="RCT">Randomised Controlled Trial (RCT)</option>
                     <option value="cohort">Cohort study (prospective or retrospective)</option>
@@ -434,25 +434,25 @@ export default function UploadPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="target_population" className="text-slate-200">Target Population Description *</Label>
+                  <Label htmlFor="target_population" className="text-foreground">Target Population Description *</Label>
                   <textarea
                     id="target_population"
                     rows={3}
                     placeholder="Describe who was studied, including disease conditions, age limits, and setting (min 20 characters)..."
                     value={formData.target_population}
                     onChange={(e) => updateField("target_population", e.target.value)}
-                    className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="geographic_coverage" className="text-slate-200">Geographic Coverage *</Label>
+                    <Label htmlFor="geographic_coverage" className="text-foreground">Geographic Coverage *</Label>
                     <select
                       id="geographic_coverage"
                       value={formData.geographic_coverage}
                       onChange={(e) => updateField("geographic_coverage", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="village">Village / Panchayat level</option>
                       <option value="taluk">Taluk / Block level</option>
@@ -464,48 +464,48 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="num_sites" className="text-slate-200">Number of Collection Sites</Label>
+                    <Label htmlFor="num_sites" className="text-foreground">Number of Collection Sites</Label>
                     <Input
                       id="num_sites"
                       type="number"
                       placeholder="e.g. 5"
                       value={formData.num_sites || ""}
                       onChange={(e) => updateField("num_sites", e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="age_range_min" className="text-slate-200">Min Age of Subjects</Label>
+                    <Label htmlFor="age_range_min" className="text-foreground">Min Age of Subjects</Label>
                     <Input
                       id="age_range_min"
                       type="number"
                       placeholder="e.g. 18"
                       value={formData.age_range_min ?? ""}
                       onChange={(e) => updateField("age_range_min", e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="age_range_max" className="text-slate-200">Max Age of Subjects</Label>
+                    <Label htmlFor="age_range_max" className="text-foreground">Max Age of Subjects</Label>
                     <Input
                       id="age_range_max"
                       type="number"
                       placeholder="e.g. 65"
                       value={formData.age_range_max ?? ""}
                       onChange={(e) => updateField("age_range_max", e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="sex_distribution" className="text-slate-200">Sex Distribution</Label>
+                    <Label htmlFor="sex_distribution" className="text-foreground">Sex Distribution</Label>
                     <select
                       id="sex_distribution"
                       value={formData.sex_distribution}
                       onChange={(e) => updateField("sex_distribution", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="both">Both male and female subjects</option>
                       <option value="male_only">Male subjects only</option>
@@ -515,19 +515,19 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-slate-200">Collection Start & End Dates</Label>
+                    <Label className="text-foreground">Collection Start & End Dates</Label>
                     <div className="flex gap-2">
                       <Input
                         type="date"
                         value={formData.collection_start_date ? String(formData.collection_start_date) : ""}
                         onChange={(e) => updateField("collection_start_date", e.target.value || undefined)}
-                        className="bg-slate-950 border-slate-800 text-xs"
+                        className="bg-background border-border text-xs"
                       />
                       <Input
                         type="date"
                         value={formData.collection_end_date ? String(formData.collection_end_date) : ""}
                         onChange={(e) => updateField("collection_end_date", e.target.value || undefined)}
-                        className="bg-slate-950 border-slate-800 text-xs"
+                        className="bg-background border-border text-xs"
                       />
                     </div>
                   </div>
@@ -538,22 +538,22 @@ export default function UploadPage() {
             {/* STEP 3: ANNOTATION & LABELLING */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-4">
-                  <Label className="text-slate-200 block text-base font-semibold">
+                <div className="p-4 rounded-lg bg-background border border-border space-y-4">
+                  <Label className="text-foreground block text-base font-semibold">
                     Does this dataset contain annotated or expert-labeled data?
                   </Label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground">
                       <input
                         type="radio"
                         name="hasAnnotatedData"
                         checked={hasAnnotatedData}
                         onChange={() => setHasAnnotatedData(true)}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>Yes, it contains labels/annotations</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground">
                       <input
                         type="radio"
                         name="hasAnnotatedData"
@@ -564,7 +564,7 @@ export default function UploadPage() {
                           updateField("num_annotators", undefined);
                           updateField("irr_value", undefined);
                         }}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>No human-derived annotations</span>
                     </label>
@@ -574,25 +574,25 @@ export default function UploadPage() {
                 {hasAnnotatedData && (
                   <div className="space-y-6 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="annotation_methodology" className="text-slate-200">Annotation Methodology *</Label>
+                      <Label htmlFor="annotation_methodology" className="text-foreground">Annotation Methodology *</Label>
                       <textarea
                         id="annotation_methodology"
                         rows={3}
                         placeholder="Describe annotator background, software guidelines, and resolution protocol (min 50 characters)..."
                         value={formData.annotation_methodology}
                         onChange={(e) => updateField("annotation_methodology", e.target.value)}
-                        className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="annotator_qualifications" className="text-slate-200">Annotator Qualifications *</Label>
+                        <Label htmlFor="annotator_qualifications" className="text-foreground">Annotator Qualifications *</Label>
                         <select
                           id="annotator_qualifications"
                           value={formData.annotator_qualifications}
                           onChange={(e) => updateField("annotator_qualifications", e.target.value)}
-                          className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                         >
                           <option value="clinician">Medical specialists (Clinicians/Radiologists)</option>
                           <option value="student">Medical students / Residents</option>
@@ -604,24 +604,24 @@ export default function UploadPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="num_annotators" className="text-slate-200">Number of Annotators *</Label>
+                        <Label htmlFor="num_annotators" className="text-foreground">Number of Annotators *</Label>
                         <Input
                           id="num_annotators"
                           type="number"
                           placeholder="e.g. 2"
                           value={formData.num_annotators ?? ""}
                           onChange={(e) => updateField("num_annotators", e.target.value ? parseInt(e.target.value) : undefined)}
-                          className="bg-slate-950 border-slate-800"
+                          className="bg-background border-border"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="irr_method" className="text-slate-200">Inter-Rater Reliability (IRR) Method</Label>
+                        <Label htmlFor="irr_method" className="text-foreground">Inter-Rater Reliability (IRR) Method</Label>
                         <select
                           id="irr_method"
                           value={formData.irr_method}
                           onChange={(e) => updateField("irr_method", e.target.value)}
-                          className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                         >
                           <option value="">Not measured / Not applicable</option>
                           <option value="cohen_kappa">Cohen&apos;s Kappa</option>
@@ -632,7 +632,7 @@ export default function UploadPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="irr_value" className="text-slate-200">IRR Value (0.0 to 1.0)</Label>
+                        <Label htmlFor="irr_value" className="text-foreground">IRR Value (0.0 to 1.0)</Label>
                         <Input
                           id="irr_value"
                           type="number"
@@ -640,7 +640,7 @@ export default function UploadPage() {
                           placeholder="e.g. 0.85"
                           value={formData.irr_value ?? ""}
                           onChange={(e) => updateField("irr_value", e.target.value ? parseFloat(e.target.value) : undefined)}
-                          className="bg-slate-950 border-slate-800"
+                          className="bg-background border-border"
                         />
                       </div>
                     </div>
@@ -653,12 +653,12 @@ export default function UploadPage() {
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="standards_used" className="text-slate-200">Health Data Standards / Coding Systems *</Label>
+                  <Label htmlFor="standards_used" className="text-foreground">Health Data Standards / Coding Systems *</Label>
                   <select
                     id="standards_used"
                     value={formData.standards_used}
                     onChange={(e) => updateField("standards_used", e.target.value)}
-                    className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                   >
                     <option value="SNOMED-CT">SNOMED CT</option>
                     <option value="ICD-10">ICD-10 or ICD-11</option>
@@ -670,7 +670,7 @@ export default function UploadPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-slate-200 block">Automated Data Quality Checks Applied</Label>
+                  <Label className="text-foreground block">Automated Data Quality Checks Applied</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
                       { id: "missing", label: "Completeness checks (missing value checks)" },
@@ -678,12 +678,12 @@ export default function UploadPage() {
                       { id: "schema", label: "Schema conformance checking" },
                       { id: "duplicates", label: "Duplicate record checks" },
                     ].map((check) => (
-                      <label key={check.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                      <label key={check.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.dq_checks_applied?.includes(check.id)}
                           onChange={() => toggleArrayField("dq_checks_applied", check.id)}
-                          className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                         />
                         <span>{check.label}</span>
                       </label>
@@ -698,12 +698,12 @@ export default function UploadPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="sensitivity_class" className="text-slate-200">Data Sensitivity Class *</Label>
+                    <Label htmlFor="sensitivity_class" className="text-foreground">Data Sensitivity Class *</Label>
                     <select
                       id="sensitivity_class"
                       value={formData.sensitivity_class}
                       onChange={(e) => updateField("sensitivity_class", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="standard">Standard (General health / Clinical cohorts)</option>
                       <option value="high_stigma">High Stigma (TB, HIV, STIs, Mental health, Caste)</option>
@@ -712,12 +712,12 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="deidentification_method" className="text-slate-200">De-identification Method *</Label>
+                    <Label htmlFor="deidentification_method" className="text-foreground">De-identification Method *</Label>
                     <select
                       id="deidentification_method"
                       value={formData.deidentification_method}
                       onChange={(e) => updateField("deidentification_method", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="HIPAA Safe Harbor">HIPAA Safe Harbor (18 identifiers removed)</option>
                       <option value="k-Anonymity">k-Anonymity / l-Diversity</option>
@@ -729,20 +729,20 @@ export default function UploadPage() {
 
                   {formData.deidentification_method === "k-Anonymity" && (
                     <div className="space-y-2">
-                      <Label htmlFor="k_anonymity_value" className="text-slate-200">Value of k (k-Anonymity)</Label>
+                      <Label htmlFor="k_anonymity_value" className="text-foreground">Value of k (k-Anonymity)</Label>
                       <Input
                         id="k_anonymity_value"
                         type="number"
                         placeholder="e.g. 5"
                         value={formData.k_anonymity_value ?? ""}
                         onChange={(e) => updateField("k_anonymity_value", e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="bg-slate-950 border-slate-800"
+                        className="bg-background border-border"
                       />
                     </div>
                   )}
 
                   <div className="space-y-3 md:col-span-2">
-                    <Label className="text-slate-200 block">Direct Identifiers Present in Dataset</Label>
+                    <Label className="text-foreground block">Direct Identifiers Present in Dataset</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {[
                         { id: "name", label: "Full/Partial Names" },
@@ -752,12 +752,12 @@ export default function UploadPage() {
                         { id: "dob", label: "Full DOB (Day/Month/Year)" },
                         { id: "gps", label: "Exact GPS/Location" },
                       ].map((idField) => (
-                        <label key={idField.id} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <label key={idField.id} className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
                           <input
                             type="checkbox"
                             checked={formData.direct_identifiers_present?.includes(idField.id)}
                             onChange={() => toggleArrayField("direct_identifiers_present", idField.id)}
-                            className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                            className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                           />
                           <span>{idField.label}</span>
                         </label>
@@ -766,12 +766,12 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location_granularity" className="text-slate-200">Location Granularity *</Label>
+                    <Label htmlFor="location_granularity" className="text-foreground">Location Granularity *</Label>
                     <select
                       id="location_granularity"
                       value={formData.location_granularity}
                       onChange={(e) => updateField("location_granularity", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="village">Village / Block (Highly granular)</option>
                       <option value="district">District level</option>
@@ -782,12 +782,12 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="temporal_granularity" className="text-slate-200">Temporal Granularity *</Label>
+                    <Label htmlFor="temporal_granularity" className="text-foreground">Temporal Granularity *</Label>
                     <select
                       id="temporal_granularity"
                       value={formData.temporal_granularity}
                       onChange={(e) => updateField("temporal_granularity", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="day">Exact Date (Day/Month/Year)</option>
                       <option value="month">Month and Year</option>
@@ -796,24 +796,24 @@ export default function UploadPage() {
                     </select>
                   </div>
 
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between col-span-2">
+                  <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between col-span-2">
                     <div className="space-y-0.5">
-                      <Label htmlFor="rare_condition_flag" className="text-slate-200 font-semibold block">Rare Condition Flag</Label>
-                      <span className="text-[11px] text-slate-400 block">Does dataset contain rare diseases or fewer than 100 individuals?</span>
+                      <Label htmlFor="rare_condition_flag" className="text-foreground font-semibold block">Rare Condition Flag</Label>
+                      <span className="text-[11px] text-muted-foreground block">Does dataset contain rare diseases or fewer than 100 individuals?</span>
                     </div>
                     <input
                       id="rare_condition_flag"
                       type="checkbox"
                       checked={formData.rare_condition_flag}
                       onChange={(e) => updateField("rare_condition_flag", e.target.checked)}
-                      className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-5 w-5 cursor-pointer"
+                      className="rounded border-border bg-background text-accent focus:ring-accent h-5 w-5 cursor-pointer"
                     />
                   </div>
 
-                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between col-span-2">
+                  <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between col-span-2">
                     <div className="space-y-0.5">
-                      <Label htmlFor="differential_privacy_applied" className="text-slate-200 font-semibold block">Differential Privacy Applied</Label>
-                      <span className="text-[11px] text-slate-400 block">Was calibrated mathematical noise added to the data records?</span>
+                      <Label htmlFor="differential_privacy_applied" className="text-foreground font-semibold block">Differential Privacy Applied</Label>
+                      <span className="text-[11px] text-muted-foreground block">Was calibrated mathematical noise added to the data records?</span>
                     </div>
                     <input
                       id="differential_privacy_applied"
@@ -823,13 +823,13 @@ export default function UploadPage() {
                         updateField("differential_privacy_applied", e.target.checked);
                         if (!e.target.checked) updateField("dp_epsilon", undefined);
                       }}
-                      className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-5 w-5 cursor-pointer"
+                      className="rounded border-border bg-background text-accent focus:ring-accent h-5 w-5 cursor-pointer"
                     />
                   </div>
 
                   {formData.differential_privacy_applied && (
                     <div className="space-y-2 col-span-2">
-                      <Label htmlFor="dp_epsilon" className="text-slate-200 font-medium">Privacy Parameter Epsilon (ε) *</Label>
+                      <Label htmlFor="dp_epsilon" className="text-foreground font-medium">Privacy Parameter Epsilon (ε) *</Label>
                       <Input
                         id="dp_epsilon"
                         type="number"
@@ -837,7 +837,7 @@ export default function UploadPage() {
                         placeholder="e.g. 1.0 (typically 0.1 - 5.0)"
                         value={formData.dp_epsilon ?? ""}
                         onChange={(e) => updateField("dp_epsilon", e.target.value ? parseFloat(e.target.value) : undefined)}
-                        className="bg-slate-950 border-slate-800"
+                        className="bg-background border-border"
                       />
                     </div>
                   )}
@@ -848,19 +848,19 @@ export default function UploadPage() {
             {/* STEP 6: ETHICS & GOVERNANCE */}
             {currentStep === 6 && (
               <div className="space-y-6">
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-3">
-                  <Label className="text-slate-200 block text-base font-semibold">Institutional Ethics Committee (IEC) Approval</Label>
+                <div className="p-4 bg-background border border-border rounded-lg space-y-3">
+                  <Label className="text-foreground block text-base font-semibold">Institutional Ethics Committee (IEC) Approval</Label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300 text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground text-sm">
                       <input
                         type="radio"
                         checked={hasEthicsApproval}
                         onChange={() => setHasEthicsApproval(true)}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>Ethics Approval Granted</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300 text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground text-sm">
                       <input
                         type="radio"
                         checked={!hasEthicsApproval}
@@ -868,7 +868,7 @@ export default function UploadPage() {
                           setHasEthicsApproval(false);
                           updateField("ethics_approval_ref", "");
                         }}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>No formal IRB approval / Waiver</span>
                     </label>
@@ -877,25 +877,25 @@ export default function UploadPage() {
 
                 {hasEthicsApproval && (
                   <div className="space-y-2">
-                    <Label htmlFor="ethics_approval_ref" className="text-slate-200">Ethics Approval Reference ID *</Label>
+                    <Label htmlFor="ethics_approval_ref" className="text-foreground">Ethics Approval Reference ID *</Label>
                     <Input
                       id="ethics_approval_ref"
                       placeholder="e.g. AIIMS/IEC/2025/124"
                       value={formData.ethics_approval_ref}
                       onChange={(e) => updateField("ethics_approval_ref", e.target.value)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="consent_type" className="text-slate-200">Consent Obtained *</Label>
+                    <Label htmlFor="consent_type" className="text-foreground">Consent Obtained *</Label>
                     <select
                       id="consent_type"
                       value={formData.consent_type}
                       onChange={(e) => updateField("consent_type", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="individual">Written informed individual consent</option>
                       <option value="waiver">Waiver granted by IRB</option>
@@ -905,12 +905,12 @@ export default function UploadPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dpdp_compliance_status" className="text-slate-200">DPDP Act (India) Compliance *</Label>
+                    <Label htmlFor="dpdp_compliance_status" className="text-foreground">DPDP Act (India) Compliance *</Label>
                     <select
                       id="dpdp_compliance_status"
                       value={formData.dpdp_compliance_status}
                       onChange={(e) => updateField("dpdp_compliance_status", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="fully_compliant">Fully Compliant</option>
                       <option value="partially_compliant">Assessed (Gaps being addressed)</option>
@@ -927,22 +927,22 @@ export default function UploadPage() {
                     { id: "redressal_mechanism_exists", label: "Consent withdrawal / redressal channel exists" },
                     { id: "dua_required", label: "Data Use Agreement (DUA) required for access" },
                   ].map((field) => (
-                    <label key={field.id} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer p-2.5 rounded border border-slate-800 bg-slate-950/30">
+                    <label key={field.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer p-2.5 rounded border border-border bg-background/30">
                       <input
                         type="checkbox"
                         checked={!!formData[field.id as keyof MetadataForm]}
                         onChange={(e) => updateField(field.id as keyof MetadataForm, e.target.checked)}
-                        className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                       />
                       <span>{field.label}</span>
                     </label>
                   ))}
                 </div>
 
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between">
+                <div className="p-3 bg-background border border-border rounded-lg flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-slate-200 font-semibold block">Named Data Steward Appointed</Label>
-                    <span className="text-[11px] text-slate-400 block">Is an individual/team officially responsible for data maintenance?</span>
+                    <Label className="text-foreground font-semibold block">Named Data Steward Appointed</Label>
+                    <span className="text-[11px] text-muted-foreground block">Is an individual/team officially responsible for data maintenance?</span>
                   </div>
                   <input
                     type="checkbox"
@@ -951,7 +951,7 @@ export default function UploadPage() {
                       setHasNamedSteward(e.target.checked);
                       updateField("named_steward_exists", e.target.checked);
                     }}
-                    className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-5 w-5 cursor-pointer"
+                    className="rounded border-border bg-background text-accent focus:ring-accent h-5 w-5 cursor-pointer"
                   />
                 </div>
               </div>
@@ -960,19 +960,19 @@ export default function UploadPage() {
             {/* STEP 7: AI READINESS & CURATION */}
             {currentStep === 7 && (
               <div className="space-y-6">
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-3">
-                  <Label className="text-slate-200 block text-base font-semibold">Synthetic or Simulated Records</Label>
+                <div className="p-4 bg-background border border-border rounded-lg space-y-3">
+                  <Label className="text-foreground block text-base font-semibold">Synthetic or Simulated Records</Label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300 text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground text-sm">
                       <input
                         type="radio"
                         checked={hasSyntheticData}
                         onChange={() => setHasSyntheticData(true)}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>Yes, dataset includes synthetic data</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300 text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer text-foreground text-sm">
                       <input
                         type="radio"
                         checked={!hasSyntheticData}
@@ -982,7 +982,7 @@ export default function UploadPage() {
                           updateField("synthetic_utility_evaluated", false);
                           updateField("synthetic_privacy_tested", false);
                         }}
-                        className="h-4 w-4 accent-indigo-500"
+                        className="h-4 w-4 accent-accent"
                       />
                       <span>Fully authentic patient data</span>
                     </label>
@@ -990,34 +990,34 @@ export default function UploadPage() {
                 </div>
 
                 {hasSyntheticData && (
-                  <div className="space-y-4 p-4 border border-indigo-950/80 bg-indigo-950/10 rounded-lg">
+                  <div className="space-y-4 p-4 border border-border bg-accent/5 rounded-lg">
                     <div className="space-y-2">
-                      <Label htmlFor="synthetic_data_pct" className="text-slate-200">Synthetic Data Percentage (0 - 100) *</Label>
+                      <Label htmlFor="synthetic_data_pct" className="text-foreground">Synthetic Data Percentage (0 - 100) *</Label>
                       <Input
                         id="synthetic_data_pct"
                         type="number"
                         placeholder="e.g. 50"
                         value={formData.synthetic_data_pct ?? ""}
                         onChange={(e) => updateField("synthetic_data_pct", e.target.value ? parseFloat(e.target.value) : undefined)}
-                        className="bg-slate-950 border-slate-800"
+                        className="bg-background border-border"
                       />
                     </div>
                     <div className="flex flex-col gap-2 mt-3">
-                      <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                      <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.synthetic_utility_evaluated ?? false}
                           onChange={(e) => updateField("synthetic_utility_evaluated", e.target.checked)}
-                          className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                         />
                         <span>Statistical utility evaluated against authentic distribution</span>
                       </label>
-                      <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                      <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.synthetic_privacy_tested ?? false}
                           onChange={(e) => updateField("synthetic_privacy_tested", e.target.checked)}
-                          className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                         />
                         <span>Privacy risks (membership inference) tested on synthetic cohort</span>
                       </label>
@@ -1026,16 +1026,16 @@ export default function UploadPage() {
                 )}
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
                     <div>
-                      <Label className="text-slate-200 font-semibold block">Public AI/ML Models Trained</Label>
-                      <span className="text-[11px] text-slate-400 block">Are there models built from this dataset available on AIKosh/HuggingFace?</span>
+                      <Label className="text-foreground font-semibold block">Public AI/ML Models Trained</Label>
+                      <span className="text-[11px] text-muted-foreground block">Are there models built from this dataset available on AIKosh/HuggingFace?</span>
                     </div>
                     <input
                       type="checkbox"
                       checked={hasLinkedModels}
                       onChange={(e) => setHasLinkedModels(e.target.checked)}
-                      className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-5 w-5 cursor-pointer"
+                      className="rounded border-border bg-background text-accent focus:ring-accent h-5 w-5 cursor-pointer"
                     />
                   </div>
                   {hasLinkedModels && (
@@ -1043,19 +1043,19 @@ export default function UploadPage() {
                       placeholder="Comma-separated model IDs (e.g. model_124, icmr-resnet-50)"
                       value={rawLinkedModelsText}
                       onChange={(e) => setRawLinkedModelsText(e.target.value)}
-                      className="bg-slate-950 border-slate-800"
+                      className="bg-background border-border"
                     />
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="version_format" className="text-slate-200">Versioning Convention *</Label>
+                    <Label htmlFor="version_format" className="text-foreground">Versioning Convention *</Label>
                     <select
                       id="version_format"
                       value={formData.version_format}
                       onChange={(e) => updateField("version_format", e.target.value)}
-                      className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="semantic">Semantic (Major.Minor.Patch)</option>
                       <option value="arbitrary">Date-based or Arbitrary numbers</option>
@@ -1064,36 +1064,36 @@ export default function UploadPage() {
                   </div>
 
                   <div className="flex flex-col justify-end gap-3 pb-1">
-                    <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.changelog_provided}
                         onChange={(e) => updateField("changelog_provided", e.target.checked)}
-                        className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                       />
                       <span>Changelog / Release notes provided</span>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.feedback_mechanism_exists}
                         onChange={(e) => updateField("feedback_mechanism_exists", e.target.checked)}
-                        className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                       />
                       <span>Feedback mechanism exists for users</span>
                     </label>
                   </div>
 
-                  <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer p-3 bg-slate-950 border border-slate-800 rounded-lg col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer p-3 bg-background border border-border rounded-lg col-span-2">
                     <input
                       type="checkbox"
                       checked={formData.sustainability_info_provided}
                       onChange={(e) => updateField("sustainability_info_provided", e.target.checked)}
-                      className="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                      className="rounded border-border bg-background text-accent focus:ring-accent h-4 w-4"
                     />
                     <div>
-                      <span className="font-semibold text-slate-200 block">Carbon footprint or energy metrics evaluated</span>
-                      <span className="text-[11px] text-slate-400 block">Has storage/computation carbon emission or compression optimizations been calculated?</span>
+                      <span className="font-semibold text-foreground block">Carbon footprint or energy metrics evaluated</span>
+                      <span className="text-[11px] text-muted-foreground block">Has storage/computation carbon emission or compression optimizations been calculated?</span>
                     </div>
                   </label>
                 </div>
@@ -1103,17 +1103,17 @@ export default function UploadPage() {
             {/* STEP 8: ATTACHMENTS */}
             {currentStep === 8 && (
               <div className="space-y-6">
-                <div className="p-4 rounded-lg border border-indigo-500/20 bg-indigo-950/10 space-y-4">
-                  <div className="flex items-center gap-2 text-indigo-400">
+                <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 space-y-4">
+                  <div className="flex items-center gap-2 text-accent">
                     <Upload className="h-5 w-5" />
                     <span className="font-semibold text-sm">Primary Dataset File *</span>
                   </div>
                   <Input
                     type="file"
                     onChange={(e) => setDatasetFile(e.target.files?.[0] || null)}
-                    className="bg-slate-950 border-slate-850 cursor-pointer"
+                    className="bg-background border-border/50 cursor-pointer"
                   />
-                  <p className="text-[11px] text-slate-400">Supports CSV, XLSX, Parquet, JSON. Recommended file size limit: 50MB for direct S3 upload.</p>
+                  <p className="text-[11px] text-muted-foreground">Supports CSV, XLSX, Parquet, JSON. Recommended file size limit: 50MB for direct S3 upload.</p>
                   {datasetFile && (
                     <div className="text-xs text-emerald-400 flex items-center gap-1.5 mt-1 font-medium">
                       <CheckCircle2 className="h-4 w-4" /> Selected: {datasetFile.name} ({(datasetFile.size / 1024 / 1024).toFixed(2)} MB)
@@ -1122,70 +1122,70 @@ export default function UploadPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-2">Optional Supporting Documentation (Recommended)</h3>
+                  <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Optional Supporting Documentation (Recommended)</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Q44 Data Dictionary */}
-                    <div className="space-y-1.5 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <Label className="text-xs font-semibold text-slate-300">Data Dictionary (Q44)</Label>
+                    <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border">
+                      <Label className="text-xs font-semibold text-foreground">Data Dictionary (Q44)</Label>
                       <Input
                         type="file"
                         onChange={(e) => setDataDictFile(e.target.files?.[0] || null)}
-                        className="bg-slate-900 border-slate-805 cursor-pointer text-xs h-9"
+                        className="bg-card border-border/50 cursor-pointer text-xs h-9"
                       />
                       {dataDictFile && <span className="text-[10px] text-emerald-400 block truncate">✓ {dataDictFile.name}</span>}
                     </div>
 
                     {/* Q45 Provenance Script */}
-                    <div className="space-y-1.5 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <Label className="text-xs font-semibold text-slate-300">Data Processing Script / Code (Q45)</Label>
+                    <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border">
+                      <Label className="text-xs font-semibold text-foreground">Data Processing Script / Code (Q45)</Label>
                       <Input
                         type="file"
                         onChange={(e) => setProvenanceFile(e.target.files?.[0] || null)}
-                        className="bg-slate-900 border-slate-805 cursor-pointer text-xs h-9"
+                        className="bg-card border-border/50 cursor-pointer text-xs h-9"
                       />
                       {provenanceFile && <span className="text-[10px] text-emerald-400 block truncate">✓ {provenanceFile.name}</span>}
                     </div>
 
                     {/* Q47 Standard Operating Procedure */}
-                    <div className="space-y-1.5 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <Label className="text-xs font-semibold text-slate-300">Standard Operating Procedure (SOP) (Q47)</Label>
+                    <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border">
+                      <Label className="text-xs font-semibold text-foreground">Standard Operating Procedure (SOP) (Q47)</Label>
                       <Input
                         type="file"
                         onChange={(e) => setSopFile(e.target.files?.[0] || null)}
-                        className="bg-slate-900 border-slate-805 cursor-pointer text-xs h-9"
+                        className="bg-card border-border/50 cursor-pointer text-xs h-9"
                       />
                       {sopFile && <span className="text-[10px] text-emerald-400 block truncate">✓ {sopFile.name}</span>}
                     </div>
 
                     {/* Q48 Ethics/Consent Documentation */}
-                    <div className="space-y-1.5 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <Label className="text-xs font-semibold text-slate-300">IEC Ethics Approval PDF (Q48)</Label>
+                    <div className="space-y-1.5 p-3 rounded-lg bg-background border border-border">
+                      <Label className="text-xs font-semibold text-foreground">IEC Ethics Approval PDF (Q48)</Label>
                       <Input
                         type="file"
                         onChange={(e) => setConsentFile(e.target.files?.[0] || null)}
-                        className="bg-slate-900 border-slate-805 cursor-pointer text-xs h-9"
+                        className="bg-card border-border/50 cursor-pointer text-xs h-9"
                       />
                       {consentFile && <span className="text-[10px] text-emerald-400 block truncate">✓ {consentFile.name}</span>}
                     </div>
                   </div>
 
                   <div className="space-y-2 mt-4">
-                    <Label htmlFor="github_repo_url" className="text-slate-300 text-xs">Alternative Pipeline Code Repo URL (Q46)</Label>
+                    <Label htmlFor="github_repo_url" className="text-foreground text-xs">Alternative Pipeline Code Repo URL (Q46)</Label>
                     <Input
                       id="github_repo_url"
                       placeholder="e.g. https://github.com/my-org/pipeline"
                       value={formData.github_repo_url}
                       onChange={(e) => updateField("github_repo_url", e.target.value)}
-                      className="bg-slate-950 border-slate-800 text-xs h-9"
+                      className="bg-background border-border text-xs h-9"
                     />
                   </div>
                 </div>
 
                 {isSubmitting && (
-                  <div className="p-4 bg-slate-900 border border-slate-850 rounded-lg flex items-center gap-3">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent shrink-0"></div>
-                    <span className="text-xs text-slate-300 font-semibold">{uploadStatus}</span>
+                  <div className="p-4 bg-card border border-border/50 rounded-lg flex items-center gap-3">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent shrink-0"></div>
+                    <span className="text-xs text-foreground font-semibold">{uploadStatus}</span>
                   </div>
                 )}
               </div>
@@ -1193,13 +1193,13 @@ export default function UploadPage() {
           </CardContent>
 
           {/* Wizard Footer Controls */}
-          <div className="flex justify-between items-center bg-slate-950/80 p-4 border-t border-slate-800 rounded-b-xl">
+          <div className="flex justify-between items-center bg-background/80 p-4 border-t border-border rounded-b-xl">
             <Button
               type="button"
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 1 || isSubmitting}
-              className="border-slate-800 hover:bg-slate-900 hover:text-slate-100 text-xs"
+              className="border-border hover:bg-card hover:text-foreground text-xs"
             >
               <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
             </Button>
@@ -1208,7 +1208,7 @@ export default function UploadPage() {
               <Button
                 type="button"
                 onClick={handleNext}
-                className="bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-xs shadow-lg shadow-indigo-650/20"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs shadow-sm"
               >
                 Next <ArrowRight className="h-4 w-4 ml-1.5" />
               </Button>
@@ -1216,7 +1216,7 @@ export default function UploadPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-slate-100 text-xs shadow-lg shadow-purple-650/20 px-6"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs shadow-sm px-6"
               >
                 {isSubmitting ? "Uploading & Analyzing..." : "Submit Quality Assessment"}
               </Button>

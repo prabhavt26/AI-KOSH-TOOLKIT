@@ -68,3 +68,15 @@ skills-lock.json
 # Root-only lockfiles (frontend package files are tracked)
 /package.json
 /package-lock.json
+
+# Editor MCP configuration (dev setup, not codebase)
+.opencode/
+
+# Sample test datasets
+SMART II Dataset.zip
+
+# Temporary test data
+backend/temp_data/
+
+# Playwright E2E test config
+playwright.config.ts
