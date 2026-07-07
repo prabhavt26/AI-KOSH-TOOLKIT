@@ -36,7 +36,7 @@ from app.audit.logger import audit_logger
 
 router = APIRouter(prefix="/assess", tags=["assessment"])
 
-ALLOWED_EXTENSIONS = {"csv", "xlsx", "parquet", "json", "tsv", "zip", "pdf", "py", "r", "ipynb"}
+ALLOWED_EXTENSIONS = {"csv", "xlsx", "parquet", "json", "tsv", "zip", "pdf", "py", "r", "ipynb", "dcm"}
 
 @router.post(
     "/upload-url",

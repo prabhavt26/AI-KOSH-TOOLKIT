@@ -125,6 +125,8 @@ def run_assessment(self, assessment_id: str, file_key: str, metadata: Dict[str, 
                     df = DatasetParser.parse_xlsx(file_bytes)
                 elif fmt == "json":
                     df = DatasetParser.parse_json(file_bytes)
+                elif fmt == "dcm":
+                    df = DatasetParser.parse_dicom(file_bytes)
                 else:
                     df = DatasetParser.parse_csv(file_bytes)
             except Exception as parser_err:
