@@ -41,7 +41,6 @@ class MetadataForm(BaseModel):
     rare_condition_flag: bool = False
     
     differential_privacy_applied: bool = False
-    dp_epsilon: Optional[float] = Field(None, gt=0.0)
     
     sensitivity_class: Literal["standard", "high_stigma", "critical"]
     persistent_identifier: Optional[str] = None
@@ -69,12 +68,6 @@ class MetadataForm(BaseModel):
     
     aikosh_dataset_id: Optional[str] = None
     webhook_url: Optional[str] = None
-
-    @model_validator(mode="after")
-    def validate_dp_parameters(self) -> 'MetadataForm':
-        if self.differential_privacy_applied and self.dp_epsilon is None:
-            raise ValueError("dp_epsilon is required when differential_privacy_applied is True")
-        return self
 
     @model_validator(mode="after")
     def validate_dates(self) -> 'MetadataForm':

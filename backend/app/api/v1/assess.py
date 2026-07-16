@@ -209,8 +209,6 @@ async def get_assessment_status_route(
             # Build PRSResult
             metadata_rec = assessment.metadata_form
             sensitivity_class = metadata_rec.sensitivity_class if metadata_rec else "standard"
-            dp_applied = metadata_rec.differential_privacy_applied if metadata_rec else False
-            dp_epsilon = float(metadata_rec.dp_epsilon) if metadata_rec and metadata_rec.dp_epsilon is not None else None
             
             prs_obj = PRSResult(
                 value=int(assessment.result.prs),
@@ -219,9 +217,7 @@ async def get_assessment_status_route(
                 sensitivity_class=sensitivity_class,
                 sensitivity_multiplier=float(assessment.result.prs_sensitivity_multiplier or 1.0),
                 adjusted_risk=float(assessment.result.prs_baseline_risk or 0.0) * float(assessment.result.prs_sensitivity_multiplier or 1.0),
-                computation_trace=assessment.result.prs_computation_trace or "",
-                differential_privacy_applied=dp_applied,
-                epsilon=dp_epsilon
+                computation_trace=assessment.result.prs_computation_trace or ""
             )
             
             # Build ReleaseClassification

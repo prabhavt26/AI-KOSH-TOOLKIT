@@ -41,7 +41,6 @@ VALID_METADATA = {
     "temporal_granularity": "month",
     "rare_condition_flag": False,
     "differential_privacy_applied": False,
-    "dp_epsilon": None,
     "sensitivity_class": "high_stigma",
     "persistent_identifier": "10.5281/zenodo.9876543",
     "license_type": "CC BY-NC 4.0",

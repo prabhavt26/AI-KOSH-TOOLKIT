@@ -46,7 +46,6 @@ export interface MetadataForm {
   temporal_granularity?: string;
   rare_condition_flag?: boolean;
   differential_privacy_applied?: boolean;
-  dp_epsilon?: number;
   sensitivity_class: "standard" | "high_stigma" | "critical";
   persistent_identifier?: string;
   license_type: string;
@@ -99,8 +98,6 @@ export interface PRSResult {
   sensitivity_multiplier: number;
   adjusted_risk: number;
   computation_trace: string;
-  differential_privacy_applied: boolean;
-  epsilon: number | null;
 }
 
 export interface ReleaseClassification {

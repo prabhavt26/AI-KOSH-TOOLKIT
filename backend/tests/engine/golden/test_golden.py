@@ -43,7 +43,6 @@ METADATA = {
     "consent_type": "individual",
     "deidentification_method": "HIPAA Safe Harbor",
     "differential_privacy_applied": False,
-    "dp_epsilon": None,
     "sensitivity_class": "high_stigma",
     "persistent_identifier": None,
     "license_type": "CC BY-NC 4.0",
@@ -325,7 +324,6 @@ class TestPRS:
         assert result.adjusted_risk == 22.5
         assert result.prs == 23
         assert result.band == "Moderate"
-        assert result.differential_privacy_applied is False
 
 
 class TestRelease:

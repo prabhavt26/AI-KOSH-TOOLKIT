@@ -176,11 +176,6 @@ class TestFieldConstraints:
         with pytest.raises(ValidationError):
             MetadataForm(**data)
 
-    def test_dp_epsilon_is_zero(self):
-        data = {**VALID_METADATA, "differential_privacy_applied": True, "dp_epsilon": 0}
-        with pytest.raises(ValidationError):
-            MetadataForm(**data)
-
 
 class TestDefaultValues:
     def test_sex_distribution_default(self):
@@ -225,20 +220,6 @@ class TestDefaultValues:
 
 
 class TestCrossFieldValidators:
-    def test_dp_epsilon_required_when_dp_applied(self):
-        data = {**VALID_METADATA, "differential_privacy_applied": True, "dp_epsilon": None}
-        with pytest.raises(ValidationError, match="dp_epsilon is required"):
-            MetadataForm(**data)
-
-    def test_dp_epsilon_optional_when_dp_not_applied(self):
-        data = {**VALID_METADATA, "differential_privacy_applied": False, "dp_epsilon": None}
-        form = MetadataForm(**data)
-        assert form.dp_epsilon is None
-
-    def test_dp_applied_with_valid_epsilon(self):
-        data = {**VALID_METADATA, "differential_privacy_applied": True, "dp_epsilon": 1.0}
-        form = MetadataForm(**data)
-        assert form.dp_epsilon == 1.0
 
     def test_end_date_before_start_date(self):
         data = {**VALID_METADATA, "collection_start_date": "2024-06-01", "collection_end_date": "2024-01-01"}

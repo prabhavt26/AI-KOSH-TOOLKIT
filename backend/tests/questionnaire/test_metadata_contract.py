@@ -50,12 +50,6 @@ class TestInvalidMetadata:
         r = await client.post("/api/v1/assess", json=body)
         assert r.status_code == 422
 
-    async def test_dp_epsilon_missing_when_dp_applied_returns_422(self, client: AsyncClient):
-        bad = {**VALID_METADATA, "differential_privacy_applied": True, "dp_epsilon": None}
-        body = {"file_key": VALID_FILE_KEY, "metadata": bad}
-        r = await client.post("/api/v1/assess", json=body)
-        assert r.status_code == 422
-
     async def test_age_range_invalid_returns_422(self, client: AsyncClient):
         bad = {**VALID_METADATA, "age_range_min": 80, "age_range_max": 10}
         body = {"file_key": VALID_FILE_KEY, "metadata": bad}

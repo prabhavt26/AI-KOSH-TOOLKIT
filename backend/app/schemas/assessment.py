@@ -71,8 +71,6 @@ class PRSResult(BaseModel):
     sensitivity_multiplier: float
     adjusted_risk: float
     computation_trace: str
-    differential_privacy_applied: bool
-    epsilon: Optional[float] = None
 
 class ReleaseClassification(BaseModel):
     classification: Literal["Open", "Controlled", "Restricted"]

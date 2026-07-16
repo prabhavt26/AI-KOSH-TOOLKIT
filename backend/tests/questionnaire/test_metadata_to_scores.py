@@ -73,9 +73,9 @@ class TestSensitivityToPRS:
 class TestDPToPrivacy:
     async def test_dp_applied_increases_privacy_score(self, api_client: AsyncClient):
         fk_no = await _upload_file(api_client)
-        no_dp = await _submit_and_poll(api_client, fk_no, {"differential_privacy_applied": False, "dp_epsilon": None})
+        no_dp = await _submit_and_poll(api_client, fk_no, {"differential_privacy_applied": False})
         fk_with = await _upload_file(api_client)
-        with_dp = await _submit_and_poll(api_client, fk_with, {"differential_privacy_applied": True, "dp_epsilon": 1.0})
+        with_dp = await _submit_and_poll(api_client, fk_with, {"differential_privacy_applied": True})
         s_no = {s["domain_number"]: s["score"] for s in no_dp.get("domain_scores", [])}
         s_with = {s["domain_number"]: s["score"] for s in with_dp.get("domain_scores", [])}
         assert s_with.get(7) is not None, "Privacy domain (7) missing in with-DP"

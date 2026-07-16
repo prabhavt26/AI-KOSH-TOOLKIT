@@ -244,7 +244,6 @@ def run_assessment(self, assessment_id: str, file_key: str, metadata: Dict[str, 
             domain_7_score_obj = next((ds for ds in domain_scores_list if ds.domain_number == 7), None)
             domain_7_passed = domain_7_score_obj is not None and domain_7_score_obj.score == 4
             dp_verified = bool(metadata_dict.get("differential_privacy_applied", False) and 
-                               metadata_dict.get("dp_epsilon") is not None and 
                                domain_7_passed)
             
             release_res = ReleaseClassificationEngine.classify_release(
@@ -290,9 +289,7 @@ def run_assessment(self, assessment_id: str, file_key: str, metadata: Dict[str, 
                     "sensitivity_class": prs_res.sensitivity_class,
                     "sensitivity_multiplier": prs_res.sensitivity_multiplier,
                     "adjusted_risk": prs_res.adjusted_risk,
-                    "computation_trace": prs_res.computation_trace,
-                    "differential_privacy_applied": prs_res.differential_privacy_applied,
-                    "epsilon": prs_res.epsilon
+                    "computation_trace": prs_res.computation_trace
                 },
                 "release": {
                     "classification": release_res.classification,

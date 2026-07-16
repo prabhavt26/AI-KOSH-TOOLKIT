@@ -32,8 +32,6 @@ class PRSResult:
     prs: int
     band: str
     computation_trace: str
-    differential_privacy_applied: bool
-    epsilon: Optional[float]
 
 def compute_prs(profile: Dict[str, Any], metadata: Dict[str, Any], criteria: Optional[Dict[str, Any]] = None) -> PRSResult:
     # Step 1: Identification risk
@@ -42,10 +40,8 @@ def compute_prs(profile: Dict[str, Any], metadata: Dict[str, Any], criteria: Opt
         baseline = 50.0
         basis = "direct_identifiers_present"
     elif metadata.get("differential_privacy_applied"):
-        epsilon = metadata.get("dp_epsilon")
-        epsilon_val = float(epsilon) if epsilon is not None else 0.0
-        baseline = min(100.0, 20.0 * epsilon_val)
-        basis = f"differential_privacy_epsilon_{epsilon}"
+        baseline = 20.0
+        basis = "differential_privacy_applied"
     else:
         location = metadata.get("location_granularity", "district")
         rare = metadata.get("rare_condition_flag", False)
@@ -96,7 +92,5 @@ def compute_prs(profile: Dict[str, Any], metadata: Dict[str, Any], criteria: Opt
         adjusted_risk=adjusted,
         prs=prs,
         band=band,
-        computation_trace=trace,
-        differential_privacy_applied=metadata.get("differential_privacy_applied", False),
-        epsilon=metadata.get("dp_epsilon")
+        computation_trace=trace
     )

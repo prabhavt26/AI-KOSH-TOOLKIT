@@ -12,19 +12,12 @@ def test_prs_differential_privacy():
     profile = {"pii_scan": {"direct_identifiers_detected": False}}
     metadata = {
         "differential_privacy_applied": True,
-        "dp_epsilon": 2.5,
         "sensitivity_class": "standard"
     }
     res = compute_prs(profile, metadata)
-    assert res.baseline_risk == 50.0  # 20.0 * 2.5 = 50.0
-    assert res.prs == 50
-    assert res.band == "High"
-
-    metadata["dp_epsilon"] = 0.5
-    res = compute_prs(profile, metadata)
-    assert res.baseline_risk == 10.0  # 20.0 * 0.5 = 10.0
-    assert res.prs == 10
-    assert res.band == "Low"
+    assert res.baseline_risk == 20.0
+    assert res.prs == 20
+    assert res.band == "Moderate"
 
 def test_prs_location_granularity():
     profile = {"pii_scan": {"direct_identifiers_detected": False}}
