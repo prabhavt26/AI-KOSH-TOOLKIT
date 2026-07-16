@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # App Settings
-    PROJECT_NAME: str = "AIKosh Dataset Quality Evaluation Toolkit"
+    PROJECT_NAME: str = "MIDAS 2.0 Dataset Quality Evaluation Toolkit"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     

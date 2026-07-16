@@ -15,7 +15,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "AIKosh Health Dataset Quality Assessment Toolkit",
+  title: "MIDAS 2.0 Health Dataset Quality Assessment Toolkit",
   description: "Automated health research dataset quality scoring aligned with MIDAS 2.0 framework",
 };
 

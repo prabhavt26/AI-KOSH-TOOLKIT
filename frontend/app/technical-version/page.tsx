@@ -14,7 +14,7 @@ export default function TechnicalVersionPage() {
           <Link href="/" className="flex items-center gap-2 font-bold text-primary transition hover:opacity-90">
             <Database className="h-5 w-5 text-accent" />
             <span className="tracking-wide font-serif text-lg">
-              AIKOSH <span className="text-accent">TOOLKIT</span>
+              MIDAS <span className="text-accent">2.0 TOOLKIT</span>
             </span>
           </Link>
           <div className="flex items-center gap-4">
@@ -152,10 +152,10 @@ export default function TechnicalVersionPage() {
           <div className="flex items-center gap-2 text-primary">
             <Database className="h-4 w-4 text-accent" />
             <span className="font-serif font-bold text-sm tracking-wide">
-              AIKOSH <span className="text-accent">QUALITY TOOLKIT</span>
+              MIDAS <span className="text-accent">2.0 QUALITY TOOLKIT</span>
             </span>
           </div>
-          <span>&copy; {new Date().getFullYear()} AIKosh. Powered by IndiaAI Mission.</span>
+          <span>&copy; {new Date().getFullYear()} MIDAS 2.0. Powered by IndiaAI Mission.</span>
         </div>
       </footer>
     </div>

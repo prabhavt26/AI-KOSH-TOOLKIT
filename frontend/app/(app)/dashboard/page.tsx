@@ -185,7 +185,7 @@ export default function DashboardPage() {
               {/* Generate Key Form */}
               <form onSubmit={handleCreateKey} className="flex gap-2">
                 <Input
-                  placeholder="Key name (e.g. AIKosh Production)"
+                  placeholder="Key name (e.g. MIDAS 2.0 Production)"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
                   className="bg-background border-border text-xs h-9"

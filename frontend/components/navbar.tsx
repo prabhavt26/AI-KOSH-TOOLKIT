@@ -26,13 +26,11 @@ export default function Navbar() {
   const mainLinks = [
     { href: "/upload", label: "Upload Wizard", icon: Upload },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/validate", label: "Delphi Validation", icon: CheckCircle },
   ];
 
   const specLinks = [
     { href: "/lite-version", label: "Lite Spec" },
     { href: "/technical-version", label: "Technical Spec" },
-    { href: "/delphi-proposal", label: "Delphi Proposal" },
   ];
 
   const isActive = (path: string) => {
@@ -47,7 +45,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 font-bold text-primary transition hover:opacity-90 shrink-0">
           <Database className="h-5 w-5 text-accent" />
           <span className="tracking-wide font-serif text-lg">
-            AIKOSH <span className="text-accent">TOOLKIT</span>
+            MIDAS <span className="text-accent">2.0 TOOLKIT</span>
           </span>
         </Link>
 

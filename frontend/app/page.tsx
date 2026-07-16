@@ -19,7 +19,7 @@ export default function Home() {
           <Link href="/" className="flex items-center gap-2 font-bold text-primary transition hover:opacity-90 shrink-0">
             <Database className="h-5 w-5 text-accent" />
             <span className="tracking-wide font-serif text-lg">
-              AIKOSH <span className="text-accent">TOOLKIT</span>
+              MIDAS <span className="text-accent">2.0 TOOLKIT</span>
             </span>
           </Link>
           
@@ -105,7 +105,7 @@ export default function Home() {
                 Automated Health Dataset <span className="text-accent">Quality Scoring</span>
               </h1>
               <p className="text-muted-foreground text-base sm:text-lg max-w-xl font-medium leading-relaxed">
-                AIKosh&apos;s standalone full-stack toolkit for scoring health research datasets across 15 domains, calculating Privacy Risk Scores, and generating release classifications.
+                MIDAS 2.0&apos;s standalone full-stack toolkit for scoring health research datasets across 15 domains, calculating Privacy Risk Scores, and generating release classifications.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Link href="/dashboard" passHref>
@@ -317,10 +317,10 @@ export default function Home() {
           <div className="flex items-center gap-2 text-primary">
             <Database className="h-4 w-4 text-accent" />
             <span className="font-serif font-bold text-sm tracking-wide">
-              AIKOSH <span className="text-accent">QUALITY TOOLKIT</span>
+              MIDAS <span className="text-accent">2.0 QUALITY TOOLKIT</span>
             </span>
           </div>
-          <span>&copy; {new Date().getFullYear()} AIKosh. Powered by IndiaAI Mission.</span>
+          <span>&copy; {new Date().getFullYear()} MIDAS 2.0. Powered by IndiaAI Mission.</span>
         </div>
       </footer>
     </div>
