@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
   Database, ArrowRight, Layers, ChartColumn, TriangleAlert, 
-  FileText, ClipboardList, HelpCircle, ShieldCheck, Menu, X
+  FileText, ClipboardList, ShieldCheck, Menu, X
 } from "lucide-react";
 
 export default function Home() {
@@ -30,9 +30,6 @@ export default function Home() {
             </Link>
             <Link href="/technical-version" className="hover:text-primary transition-colors text-xs">
               Technical Spec
-            </Link>
-            <Link href="/delphi-proposal" className="hover:text-primary transition-colors text-xs">
-              Delphi Proposal
             </Link>
             <Link href="/login" passHref>
               <Button variant="outline" className="border-border hover:bg-muted text-xs font-bold font-sans uppercase">
@@ -73,13 +70,6 @@ export default function Home() {
               className="block p-2 rounded-md text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
             >
               Technical Spec
-            </Link>
-            <Link
-              href="/delphi-proposal"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block p-2 rounded-md text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
-            >
-              Delphi Proposal
             </Link>
           </div>
           <div className="border-t border-border/40 pt-3">
@@ -267,7 +257,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <div className="p-6 rounded-xl bg-card border border-border/40 shadow-sm flex flex-col justify-between hover:border-accent/40 transition-colors">
                 <div className="space-y-3">
                   <FileText className="h-6 w-6 text-accent" />
@@ -291,19 +281,6 @@ export default function Home() {
                 </div>
                 <Link href="/technical-version" className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1 mt-6 hover:underline">
                   View Technical Spec <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-
-              <div className="p-6 rounded-xl bg-card border border-border/40 shadow-sm flex flex-col justify-between hover:border-accent/40 transition-colors">
-                <div className="space-y-3">
-                  <HelpCircle className="h-6 w-6 text-accent" />
-                  <h3 className="text-lg font-serif font-bold text-primary">Delphi Proposal</h3>
-                  <p className="text-muted-foreground text-xs leading-relaxed font-medium">
-                    Emerging expert validation methodology. Experts rate statements on clarity scales to calculate Item-CVI and Kappa.
-                  </p>
-                </div>
-                <Link href="/delphi-proposal" className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1 mt-6 hover:underline">
-                  View Delphi Spec <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Download, FileJson, FileText, CheckCircle2, AlertTriangle, 
-  BarChart3, Calendar, Server, Info, ShieldAlert, Scale
+  BarChart3, Calendar, Server, Info, ShieldAlert
 } from "lucide-react";
 import { AssessmentResultResponse } from "@/lib/types";
 
@@ -26,24 +26,6 @@ interface PageProps {
 export default function AssessmentDetailsPage({ params }: PageProps) {
   const id = params.id;
   const { data, isLoading, error } = useAssessmentStatus(id);
-  const [delphiStats, setDelphiStats] = React.useState<{ scvi: number; validated: boolean }>({ scvi: 0.933, validated: true });
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storageKey = `delphi_ratings_${id}`;
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const icvis = parsed.map((r: { agrees: number; total: number }) => r.agrees / r.total);
-          const scvi = icvis.reduce((a: number, b: number) => a + b, 0) / parsed.length;
-          setDelphiStats({ scvi, validated: scvi >= 0.9 });
-        } catch {
-          // Ignore invalid parse
-        }
-      }
-    }
-  }, [id]);
 
   if (isLoading) {
     return (
@@ -261,7 +243,7 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
       </div>
 
       {/* Row 2: Radar + Profile Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DomainRadarChart scores={res.domain_scores} />
 
         {/* Profile Summary Card */}
@@ -310,40 +292,6 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Delphi Consensus Card */}
-        <Card className="border border-border/50 bg-card/60 backdrop-blur-xl flex flex-col justify-between">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
-              <Scale className="h-4 w-4 text-accent" />
-              Delphi Consensus
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2 space-y-4 flex-1 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground font-medium text-xs">Agreement Index (S-CVI):</span>
-                <span className="text-xs font-black text-foreground font-mono">{delphiStats.scvi.toFixed(3)}</span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground font-medium text-xs">Consensus Target:</span>
-                <span className="text-xs text-accent font-bold">&ge; 0.900</span>
-              </div>
-              <div className="flex justify-between items-center py-1 border-t border-border pt-2.5">
-                <span className="text-muted-foreground font-medium text-xs">Validation Status:</span>
-                <Badge className={`text-[9px] font-bold uppercase rounded py-0.5 px-2 ${delphiStats.validated ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border border-amber-500/20"}`}>
-                  {delphiStats.validated ? "Validated" : "Pending"}
-                </Badge>
-              </div>
-            </div>
-
-            <Link href={`/validate?id=${id}`} passHref className="block mt-4 w-full">
-              <Button variant="outline" className="border-border hover:bg-muted text-xs w-full py-4 font-bold uppercase tracking-wider">
-                Adjust Ratings Panel
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       </div>
